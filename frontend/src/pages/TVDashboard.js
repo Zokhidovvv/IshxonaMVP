@@ -64,11 +64,11 @@ export default function TVDashboard() {
         api.get("/api/dashboard/purchases"),
         api.get("/api/dashboard/attendance"),
       ]);
-      setTop(t.data);
-      setDaily(d.data);
-      setWeekly(w.data);
-      setPurchases(p.data);
-      setAttendance(a.data);
+      setTop(Array.isArray(t.data) ? t.data : []);
+      setDaily(d.data && typeof d.data === "object" ? d.data : {});
+      setWeekly(Array.isArray(w.data) ? w.data : []);
+      setPurchases(p.data && typeof p.data === "object" ? p.data : {});
+      setAttendance(a.data && typeof a.data === "object" ? a.data : { keldi_count: 0 });
       setLastUpdate(new Date().toLocaleTimeString("uz-UZ"));
     } catch (e) {
       console.error("TV fetch error:", e);
@@ -81,15 +81,17 @@ export default function TVDashboard() {
     return () => clearInterval(id);
   }, []);
 
-  const maxSalary = top.reduce((m, w) => Math.max(m, Number(w.total)), 1);
+  const safeTop = Array.isArray(top) ? top : [];
+  const safeWeekly = Array.isArray(weekly) ? weekly : [];
+  const maxSalary = safeTop.reduce((m, w) => Math.max(m, Number(w.total)), 1);
   const medals = ["🥇", "🥈", "🥉"];
   const medalColors = ["#fbbf24", "#94a3b8", "#cd7c2f"];
 
   const lineData = {
-    labels: weekly.map(d => d.label),
+    labels: safeWeekly.map(d => d.label),
     datasets: [{
       label: "Maosh (so'm)",
-      data: weekly.map(d => d.production),
+      data: safeWeekly.map(d => d.production),
       borderColor: "#3b82f6",
       backgroundColor: "rgba(59,130,246,0.15)",
       fill: true, tension: 0.4,
@@ -99,17 +101,17 @@ export default function TVDashboard() {
   };
 
   const barData = {
-    labels: weekly.map(d => d.label),
+    labels: safeWeekly.map(d => d.label),
     datasets: [
       {
         label: "Keldi",
-        data: weekly.map(() => Math.floor(Math.random() * 5 + (daily.active_workers || 3))),
+        data: safeWeekly.map(() => Math.floor(Math.random() * 5 + (daily.active_workers || 3))),
         backgroundColor: "#10b981",
         borderRadius: 4,
       },
       {
         label: "Kelmadi",
-        data: weekly.map(() => Math.floor(Math.random() * 3)),
+        data: safeWeekly.map(() => Math.floor(Math.random() * 3)),
         backgroundColor: "#ef4444",
         borderRadius: 4,
       }
@@ -169,10 +171,10 @@ export default function TVDashboard() {
             <h2 style={{ color: "#94a3b8", fontSize: "14px", fontWeight: 700, marginBottom: "16px", letterSpacing: "1px" }}>
               🏆 TOP ISHCHILAR
             </h2>
-            {top.length === 0 ? (
+            {safeTop.length === 0 ? (
               <div style={{ color: "#475569", textAlign: "center", padding: "24px" }}>Ma'lumot yo'q</div>
             ) : (
-              top.slice(0, 8).map((w, i) => {
+              safeTop.slice(0, 8).map((w, i) => {
                 const pct = Math.round(Number(w.total) / maxSalary * 100);
                 const color = i < 3 ? medalColors[i] : "#3b82f6";
                 return (
@@ -219,7 +221,7 @@ export default function TVDashboard() {
       </div>
 
       {/* Ticker */}
-      {top.length > 0 && (
+      {safeTop.length > 0 && (
         <div style={{
           background: "#1e293b", borderTop: "2px solid #2563eb",
           padding: "14px 32px", display: "flex",
@@ -228,10 +230,10 @@ export default function TVDashboard() {
           <span style={{ color: "#64748b", fontSize: "13px", fontWeight: 600, letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
             🏆 BUGUNGI ENG YAXSHI ISHCHI:
           </span>
-          <span style={{ color: "#fff", fontSize: "16px", fontWeight: 700 }}>{top[0].name}</span>
+          <span style={{ color: "#fff", fontSize: "16px", fontWeight: 700 }}>{safeTop[0].name}</span>
           <span style={{ color: "#334155" }}>—</span>
           <span style={{ color: "#fbbf24", fontSize: "16px", fontWeight: 700 }}>
-            {Number(top[0].total).toLocaleString()} so'm
+            {Number(safeTop[0].total).toLocaleString()} so'm
           </span>
           <span style={{ marginLeft: "auto", color: "#475569", fontSize: "12px" }}>
             Oxirgi yangilanish: {lastUpdate || "—"}

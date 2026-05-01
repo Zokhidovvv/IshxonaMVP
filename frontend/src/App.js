@@ -7,10 +7,19 @@ import BossPanel from "./pages/BossPanel";
 import AdminPanel from "./pages/AdminPanel";
 import SalesPage from "./pages/SalesPage";
 
+function getStoredUser() {
+  try {
+    const saved = localStorage.getItem("user");
+    return saved ? JSON.parse(saved) : null;
+  } catch { return null; }
+}
+
 function ProtectedRoute({ children, roles }) {
   const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/login" replace />;
+  // setUser async bo'lgani uchun localStorage dan ham tekshiramiz
+  const currentUser = user || getStoredUser();
+  if (!currentUser) return <Navigate to="/login" replace />;
+  if (roles && !roles.includes(currentUser.role)) return <Navigate to="/login" replace />;
   return children;
 }
 
