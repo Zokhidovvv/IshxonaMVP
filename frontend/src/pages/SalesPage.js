@@ -481,6 +481,7 @@ const SIDEBAR_TABS = [
 
 export default function SalesPage() {
   const [activeTab, setActiveTab] = useState("ip");
+  const isMobile = useIsMobile();
 
   const renderTab = () => {
     switch (activeTab) {
@@ -497,8 +498,8 @@ export default function SalesPage() {
       <Navbar title="Sales Panel" />
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <Sidebar tabs={SIDEBAR_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-        <main style={{ flex: 1, overflowY: "auto", padding: "28px", paddingBottom: window.innerWidth < 768 ? "80px" : "28px" }}>
-          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: "28px" }}>
+        <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "28px", paddingBottom: isMobile ? "80px" : "28px" }}>
+          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: isMobile ? "16px" : "28px" }}>
             {renderTab()}
           </div>
         </main>

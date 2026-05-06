@@ -9,6 +9,16 @@ import * as XLSX from "xlsx";
 const todayStr = () => new Date().toISOString().split("T")[0];
 const fmt = n => Number(n || 0).toLocaleString();
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return isMobile;
+}
+
 // ─── shared helpers ───────────────────────────────────────────────────────────
 
 function exportXLSX(rows, cols, filename) {
@@ -571,6 +581,7 @@ const STATUSES = [
 
 function AttendanceTab() {
   const { showToast } = useToast();
+  const isMobile = useIsMobile();
   const [date, setDate] = useState(todayStr());
   const [workers, setWorkers] = useState([]);
   const [attMap, setAttMap] = useState({});
@@ -673,9 +684,10 @@ function AttendanceTab() {
                         onChange={e => setNoteMap(p => ({ ...p, [w.id]: e.target.value }))}
                         placeholder="Izoh..."
                         style={{
-                          padding: "6px 10px", borderRadius: "6px",
+                          padding: "8px 10px", borderRadius: "6px",
                           border: "1px solid #e2e8f0", fontSize: "13px",
-                          background: "#fff", width: "180px"
+                          background: "#fff", width: isMobile ? "100px" : "180px",
+                          minHeight: "40px"
                         }}
                       />
                     </TD>
@@ -823,6 +835,7 @@ function FieldsTab() {
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState("workers");
+  const isMobile = useIsMobile();
 
   const renderTab = () => {
     switch (activeTab) {
@@ -843,14 +856,14 @@ export default function AdminPanel() {
         <Sidebar tabs={SIDEBAR_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
         <main style={{
           flex: 1, overflowY: "auto",
-          padding: "28px",
-          paddingBottom: window.innerWidth < 768 ? "80px" : "28px"
+          padding: isMobile ? "12px" : "28px",
+          paddingBottom: isMobile ? "80px" : "28px"
         }}>
           <div style={{
             background: "#fff", borderRadius: "12px",
             border: "1px solid #e2e8f0",
             boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            padding: "28px"
+            padding: isMobile ? "16px" : "28px"
           }}>
             {renderTab()}
           </div>

@@ -6,6 +6,16 @@ import { useToast } from "../components/Toast";
 import api from "../services/api";
 import * as XLSX from "xlsx";
 import { Line, Bar } from "react-chartjs-2";
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return isMobile;
+}
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
   LineElement, PointElement, BarElement,
@@ -97,6 +107,7 @@ const SIDEBAR_TABS = [
 
 function StatsTab() {
   const { showToast } = useToast();
+  const isMobile = useIsMobile();
   const [daily, setDaily] = useState({});
   const [weekly, setWeekly] = useState([]);
   const [top, setTop] = useState([]);
@@ -153,7 +164,7 @@ function StatsTab() {
           </div>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
         <div style={{ background: "#fff", borderRadius: "12px", padding: "20px", border: "1px solid #e2e8f0" }}>
           <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#1e293b", marginBottom: "16px" }}>📈 Haftalik maosh trendi</h3>
           <Line data={lineData} options={chartOpts} />
@@ -462,6 +473,7 @@ function AttendanceTab() {
 
 export default function BossPanel() {
   const [activeTab, setActiveTab] = useState("stats");
+  const isMobile = useIsMobile();
 
   const renderTab = () => {
     switch (activeTab) {
@@ -479,8 +491,8 @@ export default function BossPanel() {
       <Navbar title="Boss Panel" />
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <Sidebar tabs={SIDEBAR_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-        <main style={{ flex: 1, overflowY: "auto", padding: "28px", paddingBottom: window.innerWidth < 768 ? "80px" : "28px" }}>
-          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: "28px" }}>
+        <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "28px", paddingBottom: isMobile ? "80px" : "28px" }}>
+          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: isMobile ? "16px" : "28px" }}>
             {renderTab()}
           </div>
         </main>

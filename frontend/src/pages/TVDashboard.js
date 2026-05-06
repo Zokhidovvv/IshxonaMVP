@@ -29,18 +29,19 @@ function useCountUp(target, duration = 800) {
   return val;
 }
 
-function StatCard({ icon, label, value, suffix = "", color }) {
+function StatCard({ icon, label, value, suffix = "", color, isMobile }) {
   const animated = useCountUp(Math.round(Number(value) || 0));
   return (
     <div style={{
       background: "#1e293b", borderRadius: "12px",
-      padding: "20px 24px", borderTop: `4px solid ${color}`,
+      padding: isMobile ? "14px 12px" : "20px 24px",
+      borderTop: `4px solid ${color}`,
       display: "flex", flexDirection: "column", alignItems: "center",
-      gap: "8px"
+      gap: isMobile ? "4px" : "8px"
     }}>
-      <span style={{ fontSize: "36px" }}>{icon}</span>
-      <div style={{ color: "#94a3b8", fontSize: "13px", textAlign: "center" }}>{label}</div>
-      <div style={{ color: "#fff", fontSize: "26px", fontWeight: 800 }}>
+      <span style={{ fontSize: isMobile ? "24px" : "36px" }}>{icon}</span>
+      <div style={{ color: "#94a3b8", fontSize: isMobile ? "11px" : "13px", textAlign: "center", lineHeight: 1.3 }}>{label}</div>
+      <div style={{ color: "#fff", fontSize: isMobile ? "18px" : "26px", fontWeight: 800 }}>
         {animated.toLocaleString()}{suffix}
       </div>
     </div>
@@ -54,6 +55,13 @@ export default function TVDashboard() {
   const [purchases, setPurchases] = useState({});
   const [attendance, setAttendance] = useState({ keldi_count: 0 });
   const [lastUpdate, setLastUpdate] = useState("");
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
 
   const fetchAll = async () => {
     try {
@@ -121,11 +129,11 @@ export default function TVDashboard() {
   const chartOpts = {
     responsive: true, maintainAspectRatio: true,
     plugins: {
-      legend: { labels: { color: "#94a3b8", font: { size: 12 } } }
+      legend: { labels: { color: "#94a3b8", font: { size: isMobile ? 10 : 12 } } }
     },
     scales: {
-      x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.1)" } },
-      y: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.1)" } }
+      x: { ticks: { color: "#94a3b8", font: { size: isMobile ? 9 : 11 } }, grid: { color: "rgba(148,163,184,0.1)" } },
+      y: { ticks: { color: "#94a3b8", font: { size: isMobile ? 9 : 11 } }, grid: { color: "rgba(148,163,184,0.1)" } }
     }
   };
 
@@ -134,66 +142,79 @@ export default function TVDashboard() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f172a", color: "#fff", display: "flex", flexDirection: "column", fontFamily: "system-ui,sans-serif" }}>
-      {/* Navbar */}
+      {/* Header */}
       <header style={{
-        height: "64px", background: "#1e3a5f",
+        background: "#1e3a5f",
         display: "flex", alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 28px",
+        padding: isMobile ? "0 14px" : "0 28px",
+        height: "56px",
         borderBottom: "1px solid rgba(255,255,255,0.08)",
-        flexShrink: 0
+        flexShrink: 0, gap: "8px"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "22px" }}>🏭</span>
-          <span style={{ color: "#fff", fontWeight: 800, fontSize: "15px", letterSpacing: "1.5px" }}>ZAVOD TIZIMI</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+          <span style={{ fontSize: isMobile ? "18px" : "22px" }}>🏭</span>
+          {!isMobile && (
+            <span style={{ color: "#fff", fontWeight: 800, fontSize: "15px", letterSpacing: "1.5px" }}>ZAVOD TIZIMI</span>
+          )}
         </div>
-        <h1 style={{ color: "#fff", fontSize: "18px", fontWeight: 800, letterSpacing: "2px" }}>
-          ISHLAB CHIQARISH MONITORI
+        <h1 style={{ color: "#fff", fontSize: isMobile ? "12px" : "18px", fontWeight: 800, letterSpacing: isMobile ? "0.5px" : "2px", textAlign: "center", flex: 1 }}>
+          {isMobile ? "ISHLAB CHIQARISH" : "ISHLAB CHIQARISH MONITORI"}
         </h1>
-        <span style={{ color: "#64748b", fontSize: "13px" }}>
+        <span style={{ color: "#64748b", fontSize: isMobile ? "11px" : "13px", flexShrink: 0 }}>
           🕐 {lastUpdate || "—"}
         </span>
       </header>
 
-      <div style={{ flex: 1, padding: "20px 24px", overflowY: "auto" }}>
-        {/* 4 ta stat karta */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "20px" }}>
-          <StatCard icon="👷" label="Bugun kelgan ishchilar" value={attendance.keldi_count || 0} suffix=" kishi" color="#3b82f6" />
-          <StatCard icon="💰" label="Bugungi maosh jami" value={daily.today_production || 0} suffix=" so'm" color="#10b981" />
-          <StatCard icon="🧵" label="Jami materiallar" value={matCount} suffix=" ta" color="#8b5cf6" />
-          <StatCard icon="📦" label="Bugungi xaridlar jami" value={totalPurchases} suffix=" so'm" color="#f59e0b" />
+      <div style={{ flex: 1, padding: isMobile ? "12px" : "20px 24px", overflowY: "auto" }}>
+        {/* Stat kartalar */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+          gap: isMobile ? "10px" : "16px",
+          marginBottom: isMobile ? "14px" : "20px"
+        }}>
+          <StatCard icon="👷" label="Bugun kelgan ishchilar" value={attendance.keldi_count || 0} suffix=" kishi" color="#3b82f6" isMobile={isMobile} />
+          <StatCard icon="💰" label="Bugungi maosh jami" value={daily.today_production || 0} suffix=" so'm" color="#10b981" isMobile={isMobile} />
+          <StatCard icon="🧵" label="Jami materiallar" value={matCount} suffix=" ta" color="#8b5cf6" isMobile={isMobile} />
+          <StatCard icon="📦" label="Bugungi xaridlar jami" value={totalPurchases} suffix=" so'm" color="#f59e0b" isMobile={isMobile} />
         </div>
 
         {/* O'rta qism: top ishchilar + grafiklar */}
-        <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: "20px", marginBottom: "20px" }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "340px 1fr",
+          gap: isMobile ? "14px" : "20px",
+          marginBottom: "20px"
+        }}>
           {/* TOP ISHCHILAR */}
-          <div style={{ background: "#1e293b", borderRadius: "12px", padding: "20px", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <h2 style={{ color: "#94a3b8", fontSize: "14px", fontWeight: 700, marginBottom: "16px", letterSpacing: "1px" }}>
+          <div style={{ background: "#1e293b", borderRadius: "12px", padding: isMobile ? "14px" : "20px", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <h2 style={{ color: "#94a3b8", fontSize: "13px", fontWeight: 700, marginBottom: "12px", letterSpacing: "1px" }}>
               🏆 TOP ISHCHILAR
             </h2>
             {safeTop.length === 0 ? (
               <div style={{ color: "#475569", textAlign: "center", padding: "24px" }}>Ma'lumot yo'q</div>
             ) : (
-              safeTop.slice(0, 8).map((w, i) => {
+              safeTop.slice(0, isMobile ? 5 : 8).map((w, i) => {
                 const pct = Math.round(Number(w.total) / maxSalary * 100);
                 const color = i < 3 ? medalColors[i] : "#3b82f6";
                 return (
                   <div key={i} style={{
                     background: i < 3 ? `${color}18` : "transparent",
                     border: `1px solid ${i < 3 ? color + "30" : "transparent"}`,
-                    borderRadius: "10px", padding: "10px",
-                    marginBottom: "8px"
+                    borderRadius: "10px", padding: isMobile ? "8px" : "10px",
+                    marginBottom: "6px"
                   }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-                      <span style={{ fontSize: "20px", width: "28px", textAlign: "center", color }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                      <span style={{ fontSize: isMobile ? "16px" : "20px", width: "24px", textAlign: "center", color, flexShrink: 0 }}>
                         {medals[i] || `#${w.rank}`}
                       </span>
-                      <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "14px", fontWeight: 600 }}>{w.name}</span>
-                        <span style={{ fontSize: "13px", fontWeight: 700, color }}>{Number(w.total).toLocaleString()} so'm</span>
+                      <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "4px", minWidth: 0 }}>
+                        <span style={{ fontSize: isMobile ? "13px" : "14px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</span>
+                        <span style={{ fontSize: isMobile ? "11px" : "13px", fontWeight: 700, color, flexShrink: 0 }}>{Number(w.total).toLocaleString()} so'm</span>
                       </div>
                     </div>
-                    <div style={{ height: "4px", background: "#0f172a", borderRadius: "2px", overflow: "hidden", marginLeft: "38px" }}>
+                    <div style={{ height: "3px", background: "#0f172a", borderRadius: "2px", overflow: "hidden", marginLeft: "32px" }}>
                       <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: "2px" }} />
                     </div>
                   </div>
@@ -203,19 +224,21 @@ export default function TVDashboard() {
           </div>
 
           {/* GRAFIKLAR */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ background: "#1e293b", borderRadius: "12px", padding: "20px", flex: 1, border: "1px solid rgba(255,255,255,0.06)" }}>
-              <h2 style={{ color: "#94a3b8", fontSize: "13px", fontWeight: 700, marginBottom: "14px", letterSpacing: "1px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ background: "#1e293b", borderRadius: "12px", padding: isMobile ? "14px" : "20px", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <h2 style={{ color: "#94a3b8", fontSize: "12px", fontWeight: 700, marginBottom: "12px", letterSpacing: "1px" }}>
                 📈 HAFTALIK MAOSH TRENDI
               </h2>
               <Line data={lineData} options={chartOpts} />
             </div>
-            <div style={{ background: "#1e293b", borderRadius: "12px", padding: "20px", flex: 1, border: "1px solid rgba(255,255,255,0.06)" }}>
-              <h2 style={{ color: "#94a3b8", fontSize: "13px", fontWeight: 700, marginBottom: "14px", letterSpacing: "1px" }}>
-                📊 HAFTALIK DAVOMAT
-              </h2>
-              <Bar data={barData} options={chartOpts} />
-            </div>
+            {!isMobile && (
+              <div style={{ background: "#1e293b", borderRadius: "12px", padding: "20px", flex: 1, border: "1px solid rgba(255,255,255,0.06)" }}>
+                <h2 style={{ color: "#94a3b8", fontSize: "13px", fontWeight: 700, marginBottom: "14px", letterSpacing: "1px" }}>
+                  📊 HAFTALIK DAVOMAT
+                </h2>
+                <Bar data={barData} options={chartOpts} />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -224,20 +247,23 @@ export default function TVDashboard() {
       {safeTop.length > 0 && (
         <div style={{
           background: "#1e293b", borderTop: "2px solid #2563eb",
-          padding: "14px 32px", display: "flex",
-          alignItems: "center", gap: "16px", flexShrink: 0
+          padding: isMobile ? "10px 16px" : "14px 32px",
+          display: "flex", alignItems: "center",
+          gap: isMobile ? "8px" : "16px", flexShrink: 0,
+          flexWrap: isMobile ? "wrap" : "nowrap"
         }}>
-          <span style={{ color: "#64748b", fontSize: "13px", fontWeight: 600, letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
-            🏆 BUGUNGI ENG YAXSHI ISHCHI:
+          <span style={{ color: "#64748b", fontSize: isMobile ? "11px" : "13px", fontWeight: 600, whiteSpace: "nowrap" }}>
+            🏆 ENG YAXSHI:
           </span>
-          <span style={{ color: "#fff", fontSize: "16px", fontWeight: 700 }}>{safeTop[0].name}</span>
-          <span style={{ color: "#334155" }}>—</span>
-          <span style={{ color: "#fbbf24", fontSize: "16px", fontWeight: 700 }}>
+          <span style={{ color: "#fff", fontSize: isMobile ? "14px" : "16px", fontWeight: 700 }}>{safeTop[0].name}</span>
+          <span style={{ color: "#fbbf24", fontSize: isMobile ? "14px" : "16px", fontWeight: 700 }}>
             {Number(safeTop[0].total).toLocaleString()} so'm
           </span>
-          <span style={{ marginLeft: "auto", color: "#475569", fontSize: "12px" }}>
-            Oxirgi yangilanish: {lastUpdate || "—"}
-          </span>
+          {!isMobile && (
+            <span style={{ marginLeft: "auto", color: "#475569", fontSize: "12px" }}>
+              Oxirgi yangilanish: {lastUpdate || "—"}
+            </span>
+          )}
         </div>
       )}
     </div>
