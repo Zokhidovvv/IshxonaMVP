@@ -152,14 +152,14 @@ export default function TVDashboard() {
         borderBottom: "1px solid rgba(255,255,255,0.08)",
         flexShrink: 0, gap: "8px"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-          <span style={{ fontSize: isMobile ? "18px" : "22px" }}>🏭</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+          <img src="/logo.png" alt="Hadicha Wear" style={{ height: isMobile ? "30px" : "36px", objectFit: "contain", borderRadius: "6px" }} />
           {!isMobile && (
-            <span style={{ color: "#fff", fontWeight: 800, fontSize: "15px", letterSpacing: "1.5px" }}>ZAVOD TIZIMI</span>
+            <span style={{ color: "#fff", fontWeight: 800, fontSize: "15px", letterSpacing: "0.5px" }}>Hadicha Wear</span>
           )}
         </div>
         <h1 style={{ color: "#fff", fontSize: isMobile ? "12px" : "18px", fontWeight: 800, letterSpacing: isMobile ? "0.5px" : "2px", textAlign: "center", flex: 1 }}>
-          {isMobile ? "ISHLAB CHIQARISH" : "ISHLAB CHIQARISH MONITORI"}
+          {isMobile ? "MONITOR" : "ISHLAB CHIQARISH MONITORI"}
         </h1>
         <span style={{ color: "#64748b", fontSize: isMobile ? "11px" : "13px", flexShrink: 0 }}>
           🕐 {lastUpdate || "—"}
@@ -246,7 +246,7 @@ export default function TVDashboard() {
       {/* Ticker */}
       {safeTop.length > 0 && (
         <div style={{
-          background: "#1e293b", borderTop: "2px solid #2563eb",
+          background: "#1e293b", borderTop: "2px solid #2d6a4f",
           padding: isMobile ? "10px 16px" : "14px 32px",
           display: "flex", alignItems: "center",
           gap: isMobile ? "8px" : "16px", flexShrink: 0,

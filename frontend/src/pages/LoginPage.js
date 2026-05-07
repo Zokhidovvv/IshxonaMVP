@@ -15,7 +15,6 @@ export default function LoginPage() {
     setError("");
     try {
       const role = await login(form.username, form.password);
-      console.log("[Login] role:", role);
       const r = (role || "").trim().toLowerCase();
       if (r === "admin") navigate("/admin");
       else if (r === "boss") navigate("/boss");
@@ -31,8 +30,11 @@ export default function LoginPage() {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>🏭 Zavod Tizimi</h1>
-        <p style={styles.sub}>Kirish uchun ma'lumot kiriting</p>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <img src="/logo.png" alt="Hadicha Wear" style={{ height: "72px", objectFit: "contain", marginBottom: "12px" }} />
+          <h1 style={styles.title}>Hadicha Wear</h1>
+          <p style={styles.sub}>Kirish uchun ma'lumot kiriting</p>
+        </div>
         {error && <div style={styles.error}>{error}</div>}
         <form onSubmit={handleSubmit}>
           <input
@@ -56,7 +58,7 @@ export default function LoginPage() {
         </form>
         <div style={{ textAlign: "center", marginTop: 20 }}>
           <a href="/tv" style={{ color: "#94a3b8", fontSize: 14 }}>
-            📺 TV Dashboard — loginsiz
+            📺 Monitor — loginsiz
           </a>
         </div>
       </div>
@@ -67,9 +69,9 @@ export default function LoginPage() {
 const styles = {
   page: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0f172a" },
   card: { background: "#1e293b", padding: "2.5rem", borderRadius: 16, width: 360, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" },
-  title: { color: "#fff", textAlign: "center", fontSize: 28, marginBottom: 8 },
-  sub: { color: "#94a3b8", textAlign: "center", marginBottom: 24 },
+  title: { color: "#fff", textAlign: "center", fontSize: 26, marginBottom: 6, fontWeight: 800 },
+  sub: { color: "#94a3b8", textAlign: "center", marginBottom: 0, fontSize: 14 },
   error: { background: "#dc2626", color: "#fff", padding: "10px 16px", borderRadius: 8, marginBottom: 16, fontSize: 14 },
   input: { width: "100%", padding: "12px 16px", marginBottom: 12, borderRadius: 8, border: "1px solid #334155", background: "#0f172a", color: "#fff", fontSize: 16, boxSizing: "border-box" },
-  btn: { width: "100%", padding: "14px", borderRadius: 8, background: "#3b82f6", color: "#fff", border: "none", fontSize: 16, fontWeight: 600, cursor: "pointer" },
+  btn: { width: "100%", padding: "14px", borderRadius: 8, background: "#2d6a4f", color: "#fff", border: "none", fontSize: 16, fontWeight: 600, cursor: "pointer", minHeight: "48px" },
 };

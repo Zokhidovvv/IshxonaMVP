@@ -19,8 +19,6 @@ function useIsMobile() {
   return isMobile;
 }
 
-// ─── shared helpers ───────────────────────────────────────────────────────────
-
 function exportXLSX(rows, cols, filename) {
   const data = [cols.map(c => c.label), ...rows.map(r => cols.map(c => r[c.key] ?? ""))];
   const ws = XLSX.utils.aoa_to_sheet(data);
@@ -32,13 +30,7 @@ function exportXLSX(rows, cols, filename) {
 function Spinner() {
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "60px" }}>
-      <div style={{
-        width: "40px", height: "40px",
-        border: "4px solid #e2e8f0",
-        borderTopColor: "#2563eb",
-        borderRadius: "50%",
-        animation: "spin 0.8s linear infinite"
-      }} />
+      <div style={{ width: "40px", height: "40px", border: "4px solid #e2e8f0", borderTopColor: "#2d6a4f", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
     </div>
   );
 }
@@ -49,13 +41,8 @@ function Inp({ value, onChange, type = "text", placeholder, required, min }) {
       type={type} value={value || ""} required={required}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder} min={min}
-      style={{
-        width: "100%", padding: "10px 12px",
-        border: "1.5px solid #cbd5e1", borderRadius: "8px",
-        fontSize: "14px", outline: "none", color: "#1e293b",
-        background: "#fff", boxSizing: "border-box"
-      }}
-      onFocus={e => e.target.style.borderColor = "#2563eb"}
+      style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" }}
+      onFocus={e => e.target.style.borderColor = "#2d6a4f"}
       onBlur={e => e.target.style.borderColor = "#cbd5e1"}
     />
   );
@@ -63,12 +50,7 @@ function Inp({ value, onChange, type = "text", placeholder, required, min }) {
 
 function Sel({ value, onChange, children }) {
   return (
-    <select value={value || ""} onChange={e => onChange(e.target.value)} style={{
-      width: "100%", padding: "10px 12px",
-      border: "1.5px solid #cbd5e1", borderRadius: "8px",
-      fontSize: "14px", outline: "none", color: "#1e293b",
-      background: "#fff", boxSizing: "border-box", cursor: "pointer"
-    }}>
+    <select value={value || ""} onChange={e => onChange(e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box", cursor: "pointer" }}>
       {children}
     </select>
   );
@@ -87,7 +69,7 @@ function Field({ label, required, children }) {
 
 function Btn({ onClick, type = "button", style: ext, disabled, children }) {
   const variants = {
-    primary: { background: "#2563eb", color: "#fff" },
+    primary: { background: "#2d6a4f", color: "#fff" },
     danger: { background: "#ef4444", color: "#fff" },
     success: { background: "#10b981", color: "#fff" },
     muted: { background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" },
@@ -104,7 +86,7 @@ function Btn({ onClick, type = "button", style: ext, disabled, children }) {
 }
 
 function BtnSm({ onClick, variant = "primary", children, title }) {
-  const bg = { primary: "#2563eb", danger: "#ef4444", success: "#10b981" };
+  const bg = { primary: "#2d6a4f", danger: "#ef4444", success: "#10b981" };
   return (
     <button onClick={onClick} title={title} style={{
       padding: "8px 12px", borderRadius: "6px", border: "none",
@@ -115,23 +97,32 @@ function BtnSm({ onClick, variant = "primary", children, title }) {
 }
 
 const TH = ({ children }) => (
-  <th style={{
-    padding: "12px 14px", textAlign: "left",
-    background: "#f8fafc", color: "#64748b",
-    fontWeight: 600, fontSize: "13px",
-    borderBottom: "1px solid #e2e8f0",
-    whiteSpace: "nowrap"
-  }}>{children}</th>
+  <th style={{ padding: "12px 14px", textAlign: "left", background: "#f8fafc", color: "#64748b", fontWeight: 600, fontSize: "13px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>
+    {children}
+  </th>
 );
+
+function SortTH({ children, sortKey, sort, onSort }) {
+  const active = sort.key === sortKey;
+  return (
+    <th onClick={() => onSort(sortKey)} style={{
+      padding: "12px 14px", textAlign: "left", background: "#f8fafc",
+      color: active ? "#2d6a4f" : "#64748b", fontWeight: 600, fontSize: "13px",
+      borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap",
+      cursor: "pointer", userSelect: "none"
+    }}>
+      {children}{active ? (sort.dir === 1 ? " ▲" : " ▼") : " ·"}
+    </th>
+  );
+}
 
 function TRow({ children, idx }) {
   const [hover, setHover] = useState(false);
   return (
-    <tr
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{ background: hover ? "#eff6ff" : idx % 2 === 0 ? "#fff" : "#f8fafc" }}
-    >{children}</tr>
+    <tr onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ background: hover ? "#f0fdf4" : idx % 2 === 0 ? "#fff" : "#f8fafc" }}>
+      {children}
+    </tr>
   );
 }
 
@@ -141,21 +132,8 @@ const TD = ({ children }) => (
   </td>
 );
 
-function RoleBadge({ role }) {
-  const colors = { admin: "#f59e0b", boss: "#10b981", sales: "#3b82f6" };
-  return (
-    <span style={{
-      padding: "3px 10px", borderRadius: "20px",
-      fontSize: "12px", fontWeight: 700, color: "#fff",
-      background: colors[role] || "#64748b",
-      textTransform: "uppercase"
-    }}>{role}</span>
-  );
-}
-
 const SIDEBAR_TABS = [
   { id: "workers", icon: "👷", label: "Ishchilar" },
-  { id: "users", icon: "👥", label: "Foydalanuvchilar" },
   { id: "materials", icon: "🧵", label: "Materiallar" },
   { id: "production", icon: "💰", label: "Kunlik maosh" },
   { id: "attendance", icon: "🗓", label: "Davomat" },
@@ -171,6 +149,8 @@ function WorkersTab() {
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ firstname: "", lastname: "", age: "", position: "" });
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState({ key: "id", dir: 1 });
 
   const load = async () => {
     setLoading(true);
@@ -201,17 +181,30 @@ function WorkersTab() {
     catch { showToast("O'chirishda xato", "error"); }
   };
 
+  const toggleSort = key => setSort(p => ({ key, dir: p.key === key ? -p.dir : 1 }));
+
+  const filtered = list.filter(w =>
+    `${w.firstname} ${w.lastname} ${w.position || ""}`.toLowerCase().includes(search.toLowerCase())
+  );
+  const sorted = [...filtered].sort((a, b) => {
+    const va = String(a[sort.key] || "").toLowerCase();
+    const vb = String(b[sort.key] || "").toLowerCase();
+    return va < vb ? -sort.dir : va > vb ? sort.dir : 0;
+  });
+
   const doExport = () => exportXLSX(
-    list.map(w => ({ id: w.id, firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "" })),
+    sorted.map(w => ({ id: w.id, firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "" })),
     [{ key: "id", label: "ID" }, { key: "firstname", label: "Ism" }, { key: "lastname", label: "Familiya" }, { key: "age", label: "Yosh" }, { key: "position", label: "Lavozim" }],
     "ishchilar.xlsx"
   );
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>👷 Ishchilar</h2>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <input type="text" placeholder="🔍 Qidirish..." value={search} onChange={e => setSearch(e.target.value)}
+            style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", minWidth: "160px", outline: "none" }} />
           <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
           <Btn onClick={openAdd}>➕ Qo'shish</Btn>
         </div>
@@ -220,10 +213,17 @@ function WorkersTab() {
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr><TH>ID</TH><TH>Ism</TH><TH>Familiya</TH><TH>Yosh</TH><TH>Lavozim</TH><TH>Amallar</TH></tr>
+              <tr>
+                <SortTH sortKey="id" sort={sort} onSort={toggleSort}>ID</SortTH>
+                <SortTH sortKey="firstname" sort={sort} onSort={toggleSort}>Ism</SortTH>
+                <SortTH sortKey="lastname" sort={sort} onSort={toggleSort}>Familiya</SortTH>
+                <SortTH sortKey="age" sort={sort} onSort={toggleSort}>Yosh</SortTH>
+                <SortTH sortKey="position" sort={sort} onSort={toggleSort}>Lavozim</SortTH>
+                <TH>Amallar</TH>
+              </tr>
             </thead>
             <tbody>
-              {list.map((w, i) => (
+              {sorted.map((w, i) => (
                 <TRow key={w.id} idx={i}>
                   <TD>{w.id}</TD>
                   <TD>{w.firstname}</TD>
@@ -238,7 +238,7 @@ function WorkersTab() {
                   </TD>
                 </TRow>
               ))}
-              {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+              {!sorted.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>{search ? "Topilmadi" : "Ma'lumot yo'q"}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -259,94 +259,6 @@ function WorkersTab() {
   );
 }
 
-// ─── USERS TAB ────────────────────────────────────────────────────────────────
-
-function UsersTab() {
-  const { showToast } = useToast();
-  const [list, setList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ username: "", password: "", role: "admin" });
-
-  const load = async () => {
-    setLoading(true);
-    try { const r = await api.get("/api/users"); setList(r.data); }
-    catch { showToast("Foydalanuvchilarni olishda xato", "error"); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const save = async e => {
-    e.preventDefault();
-    if (!form.username || !form.password) { showToast("Username va parol kiriting", "error"); return; }
-    try {
-      await api.post("/api/users", form);
-      showToast("Foydalanuvchi qo'shildi");
-      setModal(false); setForm({ username: "", password: "", role: "admin" }); load();
-    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
-  };
-
-  const del = async id => {
-    if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
-    try { await api.delete(`/api/users/${id}`); showToast("O'chirildi"); load(); }
-    catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
-  };
-
-  const doExport = () => exportXLSX(
-    list.map(u => ({ username: u.username, role: u.role, created_at: u.created_at ? new Date(u.created_at).toLocaleDateString() : "" })),
-    [{ key: "username", label: "Username" }, { key: "role", label: "Rol" }, { key: "created_at", label: "Yaratilgan" }],
-    "foydalanuvchilar.xlsx"
-  );
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>👥 Foydalanuvchilar</h2>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
-          <Btn onClick={() => setModal(true)}>➕ Qo'shish</Btn>
-        </div>
-      </div>
-      {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>Username</TH><TH>Rol</TH><TH>Yaratilgan</TH><TH>Amallar</TH></tr></thead>
-            <tbody>
-              {list.map((u, i) => (
-                <TRow key={u.id} idx={i}>
-                  <TD>{u.username}</TD>
-                  <TD><RoleBadge role={u.role} /></TD>
-                  <TD>{u.created_at ? new Date(u.created_at).toLocaleDateString("uz-UZ") : "—"}</TD>
-                  <TD><BtnSm variant="danger" onClick={() => del(u.id)}>🗑️</BtnSm></TD>
-                </TRow>
-              ))}
-              {!list.length && <tr><td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <Modal open={modal} onClose={() => setModal(false)} title="Foydalanuvchi qo'shish">
-        <form onSubmit={save}>
-          <Field label="Username" required><Inp value={form.username} onChange={v => setForm(p => ({ ...p, username: v }))} placeholder="Username" required /></Field>
-          <Field label="Parol" required><Inp type="password" value={form.password} onChange={v => setForm(p => ({ ...p, password: v }))} placeholder="Parol" required /></Field>
-          <Field label="Rol" required>
-            <Sel value={form.role} onChange={v => setForm(p => ({ ...p, role: v }))}>
-              <option value="admin">Admin</option>
-              <option value="boss">Boss</option>
-              <option value="sales">Sales</option>
-            </Sel>
-          </Field>
-          <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
-            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
-          </div>
-        </form>
-      </Modal>
-    </div>
-  );
-}
-
 // ─── MATERIALS TAB ────────────────────────────────────────────────────────────
 
 function MaterialsTab() {
@@ -355,6 +267,8 @@ function MaterialsTab() {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(false);
   const [filter, setFilter] = useState({ start: "", end: "" });
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState({ key: "date", dir: -1 });
   const [form, setForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() });
 
   const load = async () => {
@@ -387,40 +301,51 @@ function MaterialsTab() {
     catch { showToast("O'chirishda xato", "error"); }
   };
 
+  const toggleSort = key => setSort(p => ({ key, dir: p.key === key ? -p.dir : 1 }));
+
+  const filtered = list.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+  const sorted = [...filtered].sort((a, b) => {
+    const va = String(a[sort.key] || "").toLowerCase();
+    const vb = String(b[sort.key] || "").toLowerCase();
+    return va < vb ? -sort.dir : va > vb ? sort.dir : 0;
+  });
+
   const doExport = () => exportXLSX(
-    list.map(m => ({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date })),
+    sorted.map(m => ({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date })),
     [{ key: "name", label: "Nomi" }, { key: "quantity_rolls", label: "Rulon soni" }, { key: "length_meters", label: "Uzunlik (m)" }, { key: "date", label: "Sana" }],
     "materiallar.xlsx"
   );
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>🧵 Materiallar</h2>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <input type="text" placeholder="🔍 Qidirish..." value={search} onChange={e => setSearch(e.target.value)}
+            style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", minWidth: "140px", outline: "none" }} />
           <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
           <Btn onClick={() => setModal(true)}>➕ Qo'shish</Btn>
         </div>
       </div>
-      <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-        <div>
-          <label style={{ fontSize: "13px", color: "#64748b", marginRight: "6px" }}>Dan:</label>
-          <input type="date" value={filter.start} onChange={e => setFilter(p => ({ ...p, start: e.target.value }))} style={dateInp} />
-        </div>
-        <div>
-          <label style={{ fontSize: "13px", color: "#64748b", marginRight: "6px" }}>Gacha:</label>
-          <input type="date" value={filter.end} onChange={e => setFilter(p => ({ ...p, end: e.target.value }))} style={dateInp} />
-        </div>
-        {(filter.start || filter.end) && (
-          <Btn style={{ variant: "muted" }} onClick={() => setFilter({ start: "", end: "" })}>Tozalash ✕</Btn>
-        )}
+      <div style={{ display: "flex", gap: "12px", marginBottom: "14px", flexWrap: "wrap" }}>
+        <div><label style={{ fontSize: "13px", color: "#64748b", marginRight: "6px" }}>Dan:</label><input type="date" value={filter.start} onChange={e => setFilter(p => ({ ...p, start: e.target.value }))} style={dateInp} /></div>
+        <div><label style={{ fontSize: "13px", color: "#64748b", marginRight: "6px" }}>Gacha:</label><input type="date" value={filter.end} onChange={e => setFilter(p => ({ ...p, end: e.target.value }))} style={dateInp} /></div>
+        {(filter.start || filter.end) && (<Btn style={{ variant: "muted" }} onClick={() => setFilter({ start: "", end: "" })}>Tozalash ✕</Btn>)}
       </div>
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>Nomi</TH><TH>Rulon soni</TH><TH>Uzunlik (m)</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
+            <thead>
+              <tr>
+                <SortTH sortKey="name" sort={sort} onSort={toggleSort}>Nomi</SortTH>
+                <SortTH sortKey="quantity_rolls" sort={sort} onSort={toggleSort}>Rulon soni</SortTH>
+                <SortTH sortKey="length_meters" sort={sort} onSort={toggleSort}>Uzunlik (m)</SortTH>
+                <SortTH sortKey="date" sort={sort} onSort={toggleSort}>Sana</SortTH>
+                <TH>Amallar</TH>
+              </tr>
+            </thead>
             <tbody>
-              {list.map((m, i) => (
+              {sorted.map((m, i) => (
                 <TRow key={m.id} idx={i}>
                   <TD>{m.name}</TD>
                   <TD>{m.quantity_rolls}</TD>
@@ -429,7 +354,7 @@ function MaterialsTab() {
                   <TD><BtnSm variant="danger" onClick={() => del(m.id)}>🗑️</BtnSm></TD>
                 </TRow>
               ))}
-              {!list.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+              {!sorted.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>{search ? "Topilmadi" : "Ma'lumot yo'q"}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -468,10 +393,7 @@ function ProductionTab() {
       if (filter.worker_id) params.worker_id = filter.worker_id;
       if (filter.start) params.start = filter.start;
       if (filter.end) params.end = filter.end;
-      const [logs, ws] = await Promise.all([
-        api.get("/api/production", { params }),
-        api.get("/api/workers")
-      ]);
+      const [logs, ws] = await Promise.all([api.get("/api/production", { params }), api.get("/api/workers")]);
       setList(logs.data);
       setWorkers(ws.data);
       if (!form.worker_id && ws.data.length) setForm(p => ({ ...p, worker_id: ws.data[0].id }));
@@ -481,10 +403,7 @@ function ProductionTab() {
 
   useEffect(() => { load(); }, [filter]);
 
-  const workerName = id => {
-    const w = workers.find(w => w.id === id);
-    return w ? `${w.firstname} ${w.lastname}` : "—";
-  };
+  const workerName = id => { const w = workers.find(w => w.id === id); return w ? `${w.firstname} ${w.lastname}` : "—"; };
 
   const save = async e => {
     e.preventDefault();
@@ -520,9 +439,7 @@ function ProductionTab() {
         </select>
         <input type="date" value={filter.start} onChange={e => setFilter(p => ({ ...p, start: e.target.value }))} style={dateInp} />
         <input type="date" value={filter.end} onChange={e => setFilter(p => ({ ...p, end: e.target.value }))} style={dateInp} />
-        {(filter.worker_id || filter.start || filter.end) && (
-          <Btn style={{ variant: "muted" }} onClick={() => setFilter({ worker_id: "", start: "", end: "" })}>Tozalash ✕</Btn>
-        )}
+        {(filter.worker_id || filter.start || filter.end) && (<Btn style={{ variant: "muted" }} onClick={() => setFilter({ worker_id: "", start: "", end: "" })}>Tozalash ✕</Btn>)}
       </div>
       {loading ? <Spinner /> : (
         <>
@@ -542,9 +459,9 @@ function ProductionTab() {
             </table>
           </div>
           {list.length > 0 && (
-            <div style={{ marginTop: "16px", padding: "16px 20px", background: "#eff6ff", borderRadius: "10px", border: "1px solid #bfdbfe" }}>
-              <span style={{ fontWeight: 700, color: "#1e3a5f" }}>Jami maosh: </span>
-              <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "18px" }}>{fmt(total)} so'm</span>
+            <div style={{ marginTop: "16px", padding: "16px 20px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0" }}>
+              <span style={{ fontWeight: 700, color: "#14532d" }}>Jami maosh: </span>
+              <span style={{ fontWeight: 800, color: "#2d6a4f", fontSize: "18px" }}>{fmt(total)} so'm</span>
             </div>
           )}
         </>
@@ -594,10 +511,7 @@ function AttendanceTab() {
   const load = async () => {
     setLoading(true);
     try {
-      const [ws, att] = await Promise.all([
-        api.get("/api/workers"),
-        api.get("/api/attendance", { params: { date } })
-      ]);
+      const [ws, att] = await Promise.all([api.get("/api/workers"), api.get("/api/attendance", { params: { date } })]);
       setWorkers(ws.data);
       const map = {}, notes = {};
       att.data.forEach(a => { map[a.worker_id] = a.status; notes[a.worker_id] = a.note || ""; });
@@ -607,46 +521,24 @@ function AttendanceTab() {
     finally { setLoading(false); }
   };
 
-  const loadStats = async () => {
-    try {
-      const r = await api.get("/api/attendance/stats", { params: { month: statsMonth } });
-      setStats(r.data);
-    } catch { showToast("Statistika olishda xato", "error"); }
-  };
-
   useEffect(() => { load(); }, [date]);
-  useEffect(() => { loadStats(); }, [statsMonth]);
+  useEffect(() => {
+    api.get("/api/attendance/stats", { params: { month: statsMonth } }).then(r => setStats(r.data)).catch(() => {});
+  }, [statsMonth]);
 
   const saveAll = async () => {
-    const items = workers.map(w => ({
-      worker_id: w.id,
-      date,
-      status: attMap[w.id] || "keldi",
-      note: noteMap[w.id] || null
-    }));
+    const items = workers.map(w => ({ worker_id: w.id, date, status: attMap[w.id] || "keldi", note: noteMap[w.id] || null }));
     setSaving(true);
-    try {
-      await api.post("/api/attendance/bulk", items);
-      showToast("Davomat saqlandi");
-    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+    try { await api.post("/api/attendance/bulk", items); showToast("Davomat saqlandi"); }
+    catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
     finally { setSaving(false); }
-  };
-
-  const statusBadge = (val) => {
-    const st = STATUSES.find(s => s.value === val);
-    if (!st) return null;
-    return (
-      <span style={{ fontSize: "12px", fontWeight: 600, color: st.color }}>
-        {st.label}
-      </span>
-    );
   };
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>🗓 Davomat</h2>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} style={dateInp} />
           <Btn onClick={saveAll} disabled={saving}>{saving ? "Saqlanmoqda..." : "💾 Saqlash"}</Btn>
         </div>
@@ -654,9 +546,7 @@ function AttendanceTab() {
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "32px" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr><TH>Ism</TH><TH>Familiya</TH><TH>Status</TH><TH>Izoh</TH></tr>
-            </thead>
+            <thead><tr><TH>Ism</TH><TH>Familiya</TH><TH>Status</TH>{!isMobile && <TH>Izoh</TH>}</tr></thead>
             <tbody>
               {workers.map((w, i) => {
                 const status = attMap[w.id] || "keldi";
@@ -665,32 +555,17 @@ function AttendanceTab() {
                     <TD>{w.firstname}</TD>
                     <TD>{w.lastname}</TD>
                     <TD>
-                      <select
-                        value={status}
-                        onChange={e => setAttMap(p => ({ ...p, [w.id]: e.target.value }))}
-                        style={{
-                          padding: "6px 10px", borderRadius: "6px",
-                          border: "1.5px solid #e2e8f0", fontSize: "13px",
-                          background: "#fff", cursor: "pointer"
-                        }}
-                      >
+                      <select value={status} onChange={e => setAttMap(p => ({ ...p, [w.id]: e.target.value }))}
+                        style={{ padding: "8px 10px", borderRadius: "6px", border: "1.5px solid #e2e8f0", fontSize: "13px", background: "#fff", cursor: "pointer", minHeight: "40px" }}>
                         {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                       </select>
                     </TD>
-                    <TD>
-                      <input
-                        type="text"
-                        value={noteMap[w.id] || ""}
-                        onChange={e => setNoteMap(p => ({ ...p, [w.id]: e.target.value }))}
-                        placeholder="Izoh..."
-                        style={{
-                          padding: "8px 10px", borderRadius: "6px",
-                          border: "1px solid #e2e8f0", fontSize: "13px",
-                          background: "#fff", width: isMobile ? "100px" : "180px",
-                          minHeight: "40px"
-                        }}
-                      />
-                    </TD>
+                    {!isMobile && (
+                      <TD>
+                        <input type="text" value={noteMap[w.id] || ""} onChange={e => setNoteMap(p => ({ ...p, [w.id]: e.target.value }))}
+                          placeholder="Izoh..." style={{ padding: "8px 10px", borderRadius: "6px", border: "1px solid #e2e8f0", fontSize: "13px", background: "#fff", width: "150px", minHeight: "40px" }} />
+                      </TD>
+                    )}
                   </TRow>
                 );
               })}
@@ -699,9 +574,7 @@ function AttendanceTab() {
           </table>
         </div>
       )}
-
-      {/* Oylik statistika */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", flexWrap: "wrap" }}>
         <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>📅 Oylik statistika</h3>
         <input type="month" value={statsMonth} onChange={e => setStatsMonth(e.target.value)} style={dateInp} />
       </div>
@@ -709,15 +582,7 @@ function AttendanceTab() {
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr>
-                <TH>Ism</TH>
-                <TH>✅ Keldi</TH>
-                <TH>❌ Kelmadi</TH>
-                <TH>🕐 Yarim</TH>
-                <TH>🤒 Kasal</TH>
-                <TH>🏖 Ta'til</TH>
-                <TH>Jami</TH>
-              </tr>
+              <tr><TH>Ism</TH><TH>✅ Keldi</TH><TH>❌ Kelmadi</TH><TH>🕐 Yarim</TH><TH>🤒 Kasal</TH><TH>🏖 Ta'til</TH><TH>Jami</TH></tr>
             </thead>
             <tbody>
               {stats.map((s, i) => (
@@ -788,7 +653,7 @@ function FieldsTab() {
                 <TRow key={f.id} idx={i}>
                   <TD>{f.name}</TD>
                   <TD>{f.label}</TD>
-                  <TD><span style={{ padding: "3px 8px", background: "#eff6ff", color: "#2563eb", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
+                  <TD><span style={{ padding: "3px 8px", background: "#f0fdf4", color: "#2d6a4f", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
                   <TD>{f.module}</TD>
                   <TD>{f.is_required ? "✅" : "—"}</TD>
                   <TD><BtnSm variant="danger" onClick={() => del(f.id)}>🗑️</BtnSm></TD>
@@ -812,9 +677,7 @@ function FieldsTab() {
             </Sel>
           </Field>
           {form.field_type === "select" && (
-            <Field label="Variantlar (vergul bilan)">
-              <Inp value={form.options} onChange={v => setForm(p => ({ ...p, options: v }))} placeholder="variant1,variant2" />
-            </Field>
+            <Field label="Variantlar (vergul bilan)"><Inp value={form.options} onChange={v => setForm(p => ({ ...p, options: v }))} placeholder="variant1,variant2" /></Field>
           )}
           <Field label="Modul" required><Inp value={form.module} onChange={v => setForm(p => ({ ...p, module: v }))} placeholder="workers, materials..." required /></Field>
           <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginBottom: "16px" }}>
@@ -840,7 +703,6 @@ export default function AdminPanel() {
   const renderTab = () => {
     switch (activeTab) {
       case "workers": return <WorkersTab />;
-      case "users": return <UsersTab />;
       case "materials": return <MaterialsTab />;
       case "production": return <ProductionTab />;
       case "attendance": return <AttendanceTab />;
@@ -854,17 +716,8 @@ export default function AdminPanel() {
       <Navbar title="Admin Panel" />
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <Sidebar tabs={SIDEBAR_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-        <main style={{
-          flex: 1, overflowY: "auto",
-          padding: isMobile ? "12px" : "28px",
-          paddingBottom: isMobile ? "80px" : "28px"
-        }}>
-          <div style={{
-            background: "#fff", borderRadius: "12px",
-            border: "1px solid #e2e8f0",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            padding: isMobile ? "16px" : "28px"
-          }}>
+        <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "28px", paddingBottom: isMobile ? "80px" : "28px" }}>
+          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: isMobile ? "16px" : "28px" }}>
             {renderTab()}
           </div>
         </main>

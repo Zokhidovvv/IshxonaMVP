@@ -23,7 +23,7 @@ export default function Sidebar({ tabs, activeTab, onTabChange }) {
         <div style={{ height: "60px" }} />
         <nav style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
-          background: "#fff", borderTop: "1px solid #e2e8f0",
+          background: "#fff", borderTop: "2px solid #2d6a4f",
           display: "flex", zIndex: 50,
           overflowX: "auto", WebkitOverflowScrolling: "touch"
         }}>
@@ -31,17 +31,17 @@ export default function Sidebar({ tabs, activeTab, onTabChange }) {
             const active = activeTab === tab.id;
             return (
               <button key={tab.id} onClick={() => onTabChange(tab.id)} style={{
-                flex: "0 0 auto", minWidth: "64px",
+                flex: "0 0 auto", minWidth: "60px",
                 padding: "8px 6px 6px",
                 display: "flex", flexDirection: "column", alignItems: "center",
-                background: active ? "#eff6ff" : "transparent",
+                background: active ? "#f0fdf4" : "transparent",
                 border: "none", cursor: "pointer",
-                color: active ? "#2563eb" : "#64748b",
+                color: active ? "#2d6a4f" : "#64748b",
                 fontSize: "10px", fontWeight: active ? 700 : 500,
-                borderTop: `3px solid ${active ? "#2563eb" : "transparent"}`,
-                gap: "2px"
+                borderTop: `3px solid ${active ? "#2d6a4f" : "transparent"}`,
+                gap: "2px", minHeight: "52px"
               }}>
-                <span style={{ fontSize: "18px", lineHeight: 1 }}>{tab.icon}</span>
+                <span style={{ fontSize: "20px", lineHeight: 1 }}>{tab.icon}</span>
                 <span style={{ whiteSpace: "nowrap", fontSize: "10px" }}>
                   {tab.shortLabel || tab.label.split(" ").slice(-1)[0]}
                 </span>
@@ -85,17 +85,17 @@ export default function Sidebar({ tabs, activeTab, onTabChange }) {
             padding: isCollapsed ? "14px" : "13px 18px",
             display: "flex", alignItems: "center",
             gap: "12px",
-            background: active ? "#eff6ff" : "transparent",
+            background: active ? "#f0fdf4" : "transparent",
             border: "none", cursor: "pointer",
-            color: active ? "#2563eb" : "#64748b",
+            color: active ? "#2d6a4f" : "#64748b",
             fontWeight: active ? 600 : 400,
             textAlign: "left",
-            borderLeft: `3px solid ${active ? "#2563eb" : "transparent"}`,
+            borderLeft: `3px solid ${active ? "#2d6a4f" : "transparent"}`,
             fontSize: "14px",
             whiteSpace: "nowrap",
             width: "100%",
             justifyContent: isCollapsed ? "center" : "flex-start",
-            transition: "background 0.15s"
+            transition: "background 0.15s", minHeight: "44px"
           }}
             onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#f8fafc"; }}
             onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}

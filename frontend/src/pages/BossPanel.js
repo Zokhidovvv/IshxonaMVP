@@ -6,6 +6,13 @@ import { useToast } from "../components/Toast";
 import api from "../services/api";
 import * as XLSX from "xlsx";
 import { Line, Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS, CategoryScale, LinearScale,
+  LineElement, PointElement, BarElement,
+  Title, Tooltip, Legend, Filler
+} from "chart.js";
+
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, BarElement, Title, Tooltip, Legend, Filler);
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -16,13 +23,6 @@ function useIsMobile() {
   }, []);
   return isMobile;
 }
-import {
-  Chart as ChartJS, CategoryScale, LinearScale,
-  LineElement, PointElement, BarElement,
-  Title, Tooltip, Legend, Filler
-} from "chart.js";
-
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, BarElement, Title, Tooltip, Legend, Filler);
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 const fmt = n => Number(n || 0).toLocaleString();
@@ -38,7 +38,7 @@ function exportXLSX(rows, cols, filename) {
 function Spinner() {
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "60px" }}>
-      <div style={{ width: "40px", height: "40px", border: "4px solid #e2e8f0", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ width: "40px", height: "40px", border: "4px solid #e2e8f0", borderTopColor: "#2d6a4f", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
     </div>
   );
 }
@@ -48,7 +48,7 @@ function Inp({ value, onChange, type = "text", placeholder, required, min }) {
     <input type={type} value={value || ""} required={required} onChange={e => onChange(e.target.value)}
       placeholder={placeholder} min={min}
       style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" }}
-      onFocus={e => e.target.style.borderColor = "#2563eb"}
+      onFocus={e => e.target.style.borderColor = "#2d6a4f"}
       onBlur={e => e.target.style.borderColor = "#cbd5e1"}
     />
   );
@@ -75,22 +75,81 @@ function Field({ label, required, children }) {
 }
 
 function Btn({ onClick, type = "button", style: ext, disabled, children }) {
-  const variants = { primary: { background: "#2563eb", color: "#fff" }, danger: { background: "#ef4444", color: "#fff" }, success: { background: "#10b981", color: "#fff" }, muted: { background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" } };
+  const variants = {
+    primary: { background: "#2d6a4f", color: "#fff" },
+    danger: { background: "#ef4444", color: "#fff" },
+    success: { background: "#10b981", color: "#fff" },
+    muted: { background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }
+  };
   const variant = ext?.variant || "primary";
-  return <button type={type} onClick={onClick} disabled={disabled} style={{ padding: "10px 18px", borderRadius: "8px", border: "none", fontWeight: 600, fontSize: "14px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, minHeight: "48px", ...variants[variant], ...ext }}>{children}</button>;
+  return (
+    <button type={type} onClick={onClick} disabled={disabled}
+      style={{ padding: "10px 18px", borderRadius: "8px", border: "none", fontWeight: 600, fontSize: "14px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, minHeight: "48px", ...variants[variant], ...ext }}>
+      {children}
+    </button>
+  );
 }
 
 function BtnSm({ onClick, variant = "primary", children }) {
-  const bg = { primary: "#2563eb", danger: "#ef4444", success: "#10b981" };
-  return <button onClick={onClick} style={{ padding: "8px 12px", borderRadius: "6px", border: "none", fontWeight: 600, fontSize: "13px", cursor: "pointer", background: bg[variant], color: "#fff", minHeight: "44px" }}>{children}</button>;
+  const bg = { primary: "#2d6a4f", danger: "#ef4444", success: "#10b981" };
+  return (
+    <button onClick={onClick}
+      style={{ padding: "8px 12px", borderRadius: "6px", border: "none", fontWeight: 600, fontSize: "13px", cursor: "pointer", background: bg[variant], color: "#fff", minHeight: "44px" }}>
+      {children}
+    </button>
+  );
 }
 
-const TH = ({ children }) => <th style={{ padding: "12px 14px", textAlign: "left", background: "#f8fafc", color: "#64748b", fontWeight: 600, fontSize: "13px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>{children}</th>;
-const TD = ({ children }) => <td style={{ padding: "11px 14px", fontSize: "14px", color: "#1e293b", borderBottom: "1px solid #f1f5f9" }}>{children}</td>;
+const TH = ({ children }) => (
+  <th style={{ padding: "12px 14px", textAlign: "left", background: "#f8fafc", color: "#64748b", fontWeight: 600, fontSize: "13px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>
+    {children}
+  </th>
+);
+
+function SortTH({ children, sortKey, sort, onSort }) {
+  const active = sort.key === sortKey;
+  return (
+    <th onClick={() => onSort(sortKey)} style={{
+      padding: "12px 14px", textAlign: "left", background: "#f8fafc",
+      color: active ? "#2d6a4f" : "#64748b", fontWeight: 600, fontSize: "13px",
+      borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap",
+      cursor: "pointer", userSelect: "none"
+    }}>
+      {children}{active ? (sort.dir === 1 ? " ▲" : " ▼") : " ·"}
+    </th>
+  );
+}
+
+const TD = ({ children }) => (
+  <td style={{ padding: "11px 14px", fontSize: "14px", color: "#1e293b", borderBottom: "1px solid #f1f5f9" }}>
+    {children}
+  </td>
+);
 
 function TRow({ children, idx }) {
   const [hover, setHover] = useState(false);
-  return <tr onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ background: hover ? "#eff6ff" : idx % 2 === 0 ? "#fff" : "#f8fafc" }}>{children}</tr>;
+  return (
+    <tr onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ background: hover ? "#f0fdf4" : idx % 2 === 0 ? "#fff" : "#f8fafc" }}>
+      {children}
+    </tr>
+  );
+}
+
+const ROLE_COLORS = { admin: "#f59e0b", boss: "#2d6a4f", sales: "#3b82f6" };
+const ROLE_LABELS = { admin: "Admin", boss: "Boss", sales: "Sales" };
+
+function RoleBadge({ role }) {
+  return (
+    <span style={{
+      display: "inline-block", padding: "3px 10px", borderRadius: "20px",
+      fontSize: "12px", fontWeight: 700, letterSpacing: "0.5px",
+      background: ROLE_COLORS[role] || "#64748b", color: "#fff",
+      textTransform: "uppercase"
+    }}>
+      {ROLE_LABELS[role] || role}
+    </span>
+  );
 }
 
 const dateInp = { padding: "8px 12px", borderRadius: "8px", border: "1.5px solid #cbd5e1", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff" };
@@ -101,6 +160,7 @@ const SIDEBAR_TABS = [
   { id: "materials", icon: "🧵", label: "Materiallar" },
   { id: "production", icon: "💰", label: "Kunlik maosh" },
   { id: "attendance", icon: "🗓", label: "Davomat" },
+  { id: "users", icon: "👥", label: "Foydalanuvchilar" },
 ];
 
 // ─── STATS TAB ────────────────────────────────────────────────────────────────
@@ -124,8 +184,8 @@ function StatsTab() {
         api.get("/api/dashboard/attendance"),
       ]);
       setDaily(d.data);
-      setWeekly(w.data);
-      setTop(t.data);
+      setWeekly(Array.isArray(w.data) ? w.data : []);
+      setTop(Array.isArray(t.data) ? t.data : []);
       setAttendance(a.data);
     } catch { showToast("Statistikani olishda xato", "error"); }
     finally { setLoading(false); }
@@ -133,13 +193,15 @@ function StatsTab() {
 
   useEffect(() => { load(); }, []);
 
+  const safeWeekly = Array.isArray(weekly) ? weekly : [];
+
   const lineData = {
-    labels: weekly.map(d => d.label),
-    datasets: [{ label: "Maosh (so'm)", data: weekly.map(d => d.production), borderColor: "#2563eb", backgroundColor: "rgba(37,99,235,0.1)", fill: true, tension: 0.4 }]
+    labels: safeWeekly.map(d => d.label),
+    datasets: [{ label: "Maosh (so'm)", data: safeWeekly.map(d => d.production), borderColor: "#2d6a4f", backgroundColor: "rgba(45,106,79,0.1)", fill: true, tension: 0.4 }]
   };
   const barData = {
-    labels: weekly.map(d => d.label),
-    datasets: [{ label: "Sotuv (so'm)", data: weekly.map(d => d.sales), backgroundColor: "#10b981", borderRadius: 6 }]
+    labels: safeWeekly.map(d => d.label),
+    datasets: [{ label: "Sotuv (so'm)", data: safeWeekly.map(d => d.sales), backgroundColor: "#10b981", borderRadius: 6 }]
   };
   const chartOpts = { responsive: true, plugins: { legend: { labels: { font: { size: 12 } } } }, scales: { x: { grid: { color: "#f1f5f9" } }, y: { grid: { color: "#f1f5f9" } } } };
 
@@ -203,15 +265,28 @@ function WorkersTab() {
   const { showToast } = useToast();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState({ key: "id", dir: 1 });
 
   const load = async () => {
     setLoading(true);
-    try { const r = await api.get("/api/workers"); setList(r.data); }
+    try { const r = await api.get("/api/workers"); setList(Array.isArray(r.data) ? r.data : []); }
     catch { showToast("Ishchilarni olishda xato", "error"); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
+
+  const toggleSort = key => setSort(p => ({ key, dir: p.key === key ? -p.dir : 1 }));
+
+  const filtered = list.filter(w =>
+    `${w.firstname} ${w.lastname} ${w.position || ""}`.toLowerCase().includes(search.toLowerCase())
+  );
+  const sorted = [...filtered].sort((a, b) => {
+    const va = String(a[sort.key] ?? "").toLowerCase();
+    const vb = String(b[sort.key] ?? "").toLowerCase();
+    return va < vb ? -sort.dir : va > vb ? sort.dir : 0;
+  });
 
   const doExport = () => exportXLSX(
     list.map(w => ({ id: w.id, firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "" })),
@@ -221,22 +296,37 @@ function WorkersTab() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>👷 Ishchilar</h2>
         <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
       </div>
+      <input
+        value={search} onChange={e => setSearch(e.target.value)}
+        placeholder="Qidirish: ism, familiya, lavozim..."
+        style={{ width: "100%", padding: "10px 14px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box", marginBottom: "14px" }}
+        onFocus={e => e.target.style.borderColor = "#2d6a4f"}
+        onBlur={e => e.target.style.borderColor = "#cbd5e1"}
+      />
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>ID</TH><TH>Ism</TH><TH>Familiya</TH><TH>Yosh</TH><TH>Lavozim</TH></tr></thead>
+            <thead>
+              <tr>
+                <SortTH sortKey="id" sort={sort} onSort={toggleSort}>ID</SortTH>
+                <SortTH sortKey="firstname" sort={sort} onSort={toggleSort}>Ism</SortTH>
+                <SortTH sortKey="lastname" sort={sort} onSort={toggleSort}>Familiya</SortTH>
+                <SortTH sortKey="age" sort={sort} onSort={toggleSort}>Yosh</SortTH>
+                <SortTH sortKey="position" sort={sort} onSort={toggleSort}>Lavozim</SortTH>
+              </tr>
+            </thead>
             <tbody>
-              {list.map((w, i) => (
+              {sorted.map((w, i) => (
                 <TRow key={w.id} idx={i}>
                   <TD>{w.id}</TD><TD>{w.firstname}</TD><TD>{w.lastname}</TD>
                   <TD>{w.age || "—"}</TD><TD>{w.position || "—"}</TD>
                 </TRow>
               ))}
-              {!list.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+              {!sorted.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
             </tbody>
           </table>
         </div>
@@ -260,7 +350,7 @@ function MaterialsTab() {
       if (filter.start) params.start = filter.start;
       if (filter.end) params.end = filter.end;
       const r = await api.get("/api/materials", { params });
-      setList(r.data);
+      setList(Array.isArray(r.data) ? r.data : []);
     } catch { showToast("Materiallarni olishda xato", "error"); }
     finally { setLoading(false); }
   };
@@ -318,7 +408,8 @@ function ProductionTab() {
       if (filter.start) params.start = filter.start;
       if (filter.end) params.end = filter.end;
       const [logs, ws] = await Promise.all([api.get("/api/production", { params }), api.get("/api/workers")]);
-      setList(logs.data); setWorkers(ws.data);
+      setList(Array.isArray(logs.data) ? logs.data : []);
+      setWorkers(Array.isArray(ws.data) ? ws.data : []);
     } catch { showToast("Xato", "error"); }
     finally { setLoading(false); }
   };
@@ -356,16 +447,20 @@ function ProductionTab() {
               <thead><tr><TH>Ishchi</TH><TH>Maosh (so'm)</TH><TH>Sana</TH></tr></thead>
               <tbody>
                 {list.map((l, i) => (
-                  <TRow key={l.id} idx={i}><TD>{workerName(l.worker_id)}</TD><TD><span style={{ fontWeight: 600, color: "#10b981" }}>{fmt(l.daily_salary)} so'm</span></TD><TD>{l.date}</TD></TRow>
+                  <TRow key={l.id} idx={i}>
+                    <TD>{workerName(l.worker_id)}</TD>
+                    <TD><span style={{ fontWeight: 600, color: "#10b981" }}>{fmt(l.daily_salary)} so'm</span></TD>
+                    <TD>{l.date}</TD>
+                  </TRow>
                 ))}
                 {!list.length && <tr><td colSpan={3} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
               </tbody>
             </table>
           </div>
           {list.length > 0 && (
-            <div style={{ marginTop: "16px", padding: "16px 20px", background: "#eff6ff", borderRadius: "10px", border: "1px solid #bfdbfe" }}>
-              <span style={{ fontWeight: 700, color: "#1e3a5f" }}>Jami: </span>
-              <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "18px" }}>{fmt(total)} so'm</span>
+            <div style={{ marginTop: "16px", padding: "16px 20px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0" }}>
+              <span style={{ fontWeight: 700, color: "#1e293b" }}>Jami: </span>
+              <span style={{ fontWeight: 800, color: "#2d6a4f", fontSize: "18px" }}>{fmt(total)} so'm</span>
             </div>
           )}
         </>
@@ -395,9 +490,9 @@ function AttendanceTab() {
     setLoading(true);
     try {
       const [ws, att] = await Promise.all([api.get("/api/workers"), api.get("/api/attendance", { params: { date } })]);
-      setWorkers(ws.data);
+      setWorkers(Array.isArray(ws.data) ? ws.data : []);
       const map = {};
-      att.data.forEach(a => { map[a.worker_id] = a.status; });
+      (Array.isArray(att.data) ? att.data : []).forEach(a => { map[a.worker_id] = a.status; });
       setAttMap(map);
     } catch { showToast("Xato", "error"); }
     finally { setLoading(false); }
@@ -405,7 +500,7 @@ function AttendanceTab() {
 
   useEffect(() => { load(); }, [date]);
   useEffect(() => {
-    api.get("/api/attendance/stats", { params: { month: statsMonth } }).then(r => setStats(r.data)).catch(() => {});
+    api.get("/api/attendance/stats", { params: { month: statsMonth } }).then(r => setStats(Array.isArray(r.data) ? r.data : [])).catch(() => {});
   }, [statsMonth]);
 
   const doExport = () => exportXLSX(
@@ -440,7 +535,7 @@ function AttendanceTab() {
           </table>
         </div>
       )}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", flexWrap: "wrap" }}>
         <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>📅 Oylik statistika</h3>
         <input type="month" value={statsMonth} onChange={e => setStatsMonth(e.target.value)} style={dateInp} />
         {stats.length > 0 && <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>}
@@ -469,6 +564,117 @@ function AttendanceTab() {
   );
 }
 
+// ─── USERS TAB ────────────────────────────────────────────────────────────────
+
+const ROLES = [
+  { value: "admin", label: "Admin" },
+  { value: "boss", label: "Boss" },
+  { value: "sales", label: "Sales" },
+];
+
+function UsersTab() {
+  const { showToast } = useToast();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ username: "", password: "", role: "sales" });
+
+  const load = async () => {
+    setLoading(true);
+    try { const r = await api.get("/api/users"); setList(Array.isArray(r.data) ? r.data : []); }
+    catch { showToast("Foydalanuvchilarni olishda xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const save = async e => {
+    e.preventDefault();
+    if (!form.username || !form.password) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
+    setSaving(true);
+    try {
+      await api.post("/api/users", form);
+      showToast("Foydalanuvchi qo'shildi");
+      setForm({ username: "", password: "", role: "sales" });
+      setShowModal(false);
+      load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+    finally { setSaving(false); }
+  };
+
+  const del = async id => {
+    if (!window.confirm("Foydalanuvchini o'chirishni tasdiqlaysizmi?")) return;
+    try { await api.delete(`/api/users/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  const doExport = () => exportXLSX(
+    list.map(u => ({ id: u.id, username: u.username, role: u.role })),
+    [{ key: "id", label: "ID" }, { key: "username", label: "Login" }, { key: "role", label: "Rol" }],
+    "foydalanuvchilar.xlsx"
+  );
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>👥 Foydalanuvchilar</h2>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
+          <BtnSm onClick={() => setShowModal(true)}>➕ Qo'shish</BtnSm>
+        </div>
+      </div>
+
+      {loading ? <Spinner /> : (
+        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr><TH>ID</TH><TH>Login</TH><TH>Rol</TH><TH></TH></tr></thead>
+            <tbody>
+              {list.map((u, i) => (
+                <TRow key={u.id} idx={i}>
+                  <TD>{u.id}</TD>
+                  <TD><span style={{ fontWeight: 600 }}>{u.username}</span></TD>
+                  <TD><RoleBadge role={u.role} /></TD>
+                  <TD>
+                    <button onClick={() => del(u.id)} style={{ padding: "6px 12px", borderRadius: "6px", border: "none", background: "#fee2e2", color: "#ef4444", cursor: "pointer", fontSize: "14px", fontWeight: 700, minHeight: "36px" }}>
+                      🗑️
+                    </button>
+                  </TD>
+                </TRow>
+              ))}
+              {!list.length && <tr><td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Foydalanuvchilar yo'q</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showModal && (
+        <Modal title="Yangi foydalanuvchi" onClose={() => setShowModal(false)}>
+          <form onSubmit={save}>
+            <Field label="Login" required>
+              <Inp value={form.username} onChange={v => setForm(p => ({ ...p, username: v }))} placeholder="foydalanuvchi nomi" required />
+            </Field>
+            <Field label="Parol" required>
+              <Inp type="password" value={form.password} onChange={v => setForm(p => ({ ...p, password: v }))} placeholder="••••••••" required />
+            </Field>
+            <Field label="Rol" required>
+              <Sel value={form.role} onChange={v => setForm(p => ({ ...p, role: v }))}>
+                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </Sel>
+            </Field>
+            <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+              <Btn type="submit" disabled={saving} style={{ flex: 1, variant: "primary" }}>
+                {saving ? "Saqlanmoqda..." : "➕ Qo'shish"}
+              </Btn>
+              <Btn onClick={() => setShowModal(false)} style={{ variant: "muted" }}>Bekor</Btn>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN BOSS PANEL ──────────────────────────────────────────────────────────
 
 export default function BossPanel() {
@@ -482,6 +688,7 @@ export default function BossPanel() {
       case "materials": return <MaterialsTab />;
       case "production": return <ProductionTab />;
       case "attendance": return <AttendanceTab />;
+      case "users": return <UsersTab />;
       default: return null;
     }
   };

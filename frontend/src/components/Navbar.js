@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../store/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-const roleColor = { admin: "#f59e0b", boss: "#10b981", sales: "#3b82f6" };
+const roleColor = { admin: "#f59e0b", boss: "#2d6a4f", sales: "#3b82f6" };
 const roleLabel = { admin: "Admin", boss: "Boss", sales: "Sales" };
 
 export default function Navbar({ title }) {
@@ -32,18 +32,17 @@ export default function Navbar({ title }) {
       flexShrink: 0
     }}>
       {/* Left: logo + brand/title */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: "22px", flexShrink: 0 }}>🏭</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
+        <img src="/logo.png" alt="Hadicha Wear" style={{ height: "36px", objectFit: "contain", flexShrink: 0, borderRadius: "6px" }} />
         {isMobile ? (
           title && (
-            <span style={{
-              color: "#93c5fd", fontWeight: 700, fontSize: "14px",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
-            }}>{title}</span>
+            <span style={{ color: "#93c5fd", fontWeight: 700, fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {title}
+            </span>
           )
         ) : (
-          <span style={{ color: "#fff", fontWeight: 800, fontSize: "15px", letterSpacing: "1.5px", whiteSpace: "nowrap" }}>
-            ZAVOD TIZIMI
+          <span style={{ color: "#fff", fontWeight: 800, fontSize: "15px", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
+            Hadicha Wear
           </span>
         )}
       </div>
@@ -78,7 +77,7 @@ export default function Navbar({ title }) {
             color: "#fff",
             padding: isMobile ? "8px 12px" : "6px 14px",
             borderRadius: "7px", cursor: "pointer",
-            fontSize: isMobile ? "13px" : "13px", fontWeight: 600,
+            fontSize: "13px", fontWeight: 600,
             minHeight: "40px", whiteSpace: "nowrap"
           }}>
             {isMobile ? "✕" : "Chiqish"}

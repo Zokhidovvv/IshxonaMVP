@@ -21,7 +21,7 @@ function useIsMobile() {
 function Spinner() {
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
-      <div style={{ width: "36px", height: "36px", border: "4px solid #e2e8f0", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ width: "36px", height: "36px", border: "4px solid #e2e8f0", borderTopColor: "#2d6a4f", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
     </div>
   );
 }
@@ -31,7 +31,7 @@ const TD = ({ children }) => <td style={{ padding: "10px 14px", fontSize: "14px"
 
 function TRow({ children, idx }) {
   const [hover, setHover] = useState(false);
-  return <tr onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ background: hover ? "#eff6ff" : idx % 2 === 0 ? "#fff" : "#f8fafc" }}>{children}</tr>;
+  return <tr onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ background: hover ? "#f0fdf4" : idx % 2 === 0 ? "#fff" : "#f8fafc" }}>{children}</tr>;
 }
 
 const inp = {
@@ -54,7 +54,7 @@ function Field({ label, required, children }) {
 function SubmitBtn({ loading, children }) {
   return (
     <button type="submit" disabled={loading} style={{
-      width: "100%", padding: "13px", background: loading ? "#93c5fd" : "#2563eb",
+      width: "100%", padding: "13px", background: loading ? "#6ee7b7" : "#2d6a4f",
       color: "#fff", border: "none", borderRadius: "8px",
       fontSize: "15px", fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
       marginTop: "8px", minHeight: "48px"
@@ -64,9 +64,9 @@ function SubmitBtn({ loading, children }) {
 
 function TotalCard({ label, value }) {
   return (
-    <div style={{ marginTop: "16px", padding: "14px 18px", background: "#eff6ff", borderRadius: "10px", border: "1px solid #bfdbfe" }}>
-      <span style={{ fontWeight: 700, color: "#1e3a5f" }}>{label}: </span>
-      <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "18px" }}>{fmt(value)} so'm</span>
+    <div style={{ marginTop: "16px", padding: "14px 18px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0" }}>
+      <span style={{ fontWeight: 700, color: "#1e293b" }}>{label}: </span>
+      <span style={{ fontWeight: 800, color: "#2d6a4f", fontSize: "18px" }}>{fmt(value)} so'm</span>
     </div>
   );
 }
@@ -129,15 +129,15 @@ function IpTab() {
         <form onSubmit={save}>
           <Field label="Soni (pachka)" required>
             <input type="number" value={form.soni} onChange={e => setForm(p => ({ ...p, soni: e.target.value }))} placeholder="0" style={inp} min="1" required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Narxi (so'm)" required>
             <input type="number" value={form.narxi} onChange={e => setForm(p => ({ ...p, narxi: e.target.value }))} placeholder="0" style={inp} min="0" required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Sana" required>
             <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inp} required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           {form.soni && form.narxi && (
             <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "12px", fontSize: "14px", color: "#065f46", fontWeight: 600 }}>
@@ -233,16 +233,16 @@ function SkochTab() {
               <option value="28">28 mm</option>
             </select>
           </Field>
-          <div style={{ padding: "10px 14px", background: "#eff6ff", borderRadius: "8px", marginBottom: "14px", fontSize: "14px", color: "#1e3a5f" }}>
+          <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "14px", fontSize: "14px", color: "#1e3a5f" }}>
             💡 Narxi: <strong>{fmt(autoNarxi)} so'm</strong> (avtomatik)
           </div>
           <Field label="Soni (dona)" required>
             <input type="number" value={form.soni} onChange={e => setForm(p => ({ ...p, soni: e.target.value }))} placeholder="0" style={inp} min="1" required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Sana" required>
             <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inp} required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           {form.soni && (
             <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "12px", fontSize: "14px", color: "#065f46", fontWeight: 600 }}>
@@ -329,19 +329,19 @@ function MaterialTab() {
         <form onSubmit={save}>
           <Field label="Nomi" required>
             <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Material nomi" style={inp} required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Rulon soni" required>
             <input type="number" value={form.quantity_rolls} onChange={e => setForm(p => ({ ...p, quantity_rolls: e.target.value }))} placeholder="0" style={inp} min="1" required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Uzunlik (m)" required>
             <input type="number" value={form.length_meters} onChange={e => setForm(p => ({ ...p, length_meters: e.target.value }))} placeholder="0" style={inp} min="0" step="0.1" required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Sana" required>
             <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inp} required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <SubmitBtn loading={saving}>➕ Qo'shish</SubmitBtn>
         </form>
@@ -419,19 +419,19 @@ function ToshTab() {
         <form onSubmit={save}>
           <Field label="Turi" required>
             <input type="text" value={form.turi} onChange={e => setForm(p => ({ ...p, turi: e.target.value }))} placeholder="Tosh turi" style={inp} required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Soni (pachka)" required>
             <input type="number" value={form.soni} onChange={e => setForm(p => ({ ...p, soni: e.target.value }))} placeholder="0" style={inp} min="1" required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Narxi (so'm)" required>
             <input type="number" value={form.narxi} onChange={e => setForm(p => ({ ...p, narxi: e.target.value }))} placeholder="0" style={inp} min="0" required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           <Field label="Sana" required>
             <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inp} required
-              onFocus={e => e.target.style.borderColor = "#2563eb"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
           </Field>
           {form.soni && form.narxi && (
             <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "12px", fontSize: "14px", color: "#065f46", fontWeight: 600 }}>
