@@ -11,3 +11,4 @@ class FormField(Base):
     is_required = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     module = Column(String(50), nullable=False)  # production | sales
+    panel = Column(String(50), nullable=False, default="admin")  # admin | sales

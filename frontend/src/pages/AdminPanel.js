@@ -5,6 +5,7 @@ import Modal from "../components/Modal";
 import { useToast } from "../components/Toast";
 import api from "../services/api";
 import * as XLSX from "xlsx";
+import DateRangeFilter from "../components/DateRangeFilter";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 const fmt = n => Number(n || 0).toLocaleString();
@@ -327,11 +328,7 @@ function MaterialsTab() {
           <Btn onClick={() => setModal(true)}>➕ Qo'shish</Btn>
         </div>
       </div>
-      <div style={{ display: "flex", gap: "12px", marginBottom: "14px", flexWrap: "wrap" }}>
-        <div><label style={{ fontSize: "13px", color: "#64748b", marginRight: "6px" }}>Dan:</label><input type="date" value={filter.start} onChange={e => setFilter(p => ({ ...p, start: e.target.value }))} style={dateInp} /></div>
-        <div><label style={{ fontSize: "13px", color: "#64748b", marginRight: "6px" }}>Gacha:</label><input type="date" value={filter.end} onChange={e => setFilter(p => ({ ...p, end: e.target.value }))} style={dateInp} /></div>
-        {(filter.start || filter.end) && (<Btn style={{ variant: "muted" }} onClick={() => setFilter({ start: "", end: "" })}>Tozalash ✕</Btn>)}
-      </div>
+      <DateRangeFilter filter={filter} onChange={setFilter} />
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -432,15 +429,13 @@ function ProductionTab() {
           <Btn onClick={() => setModal(true)}>➕ Qo'shish</Btn>
         </div>
       </div>
-      <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
-        <select value={filter.worker_id} onChange={e => setFilter(p => ({ ...p, worker_id: e.target.value }))} style={{ ...dateInp, minWidth: "160px" }}>
+      <div style={{ marginBottom: "10px" }}>
+        <select value={filter.worker_id} onChange={e => setFilter(p => ({ ...p, worker_id: e.target.value }))} style={{ ...dateInp, minWidth: "180px" }}>
           <option value="">Barcha ishchilar</option>
           {workers.map(w => <option key={w.id} value={w.id}>{w.firstname} {w.lastname}</option>)}
         </select>
-        <input type="date" value={filter.start} onChange={e => setFilter(p => ({ ...p, start: e.target.value }))} style={dateInp} />
-        <input type="date" value={filter.end} onChange={e => setFilter(p => ({ ...p, end: e.target.value }))} style={dateInp} />
-        {(filter.worker_id || filter.start || filter.end) && (<Btn style={{ variant: "muted" }} onClick={() => setFilter({ worker_id: "", start: "", end: "" })}>Tozalash ✕</Btn>)}
       </div>
+      <DateRangeFilter filter={filter} onChange={v => setFilter(p => ({ ...p, ...v }))} />
       {loading ? <Spinner /> : (
         <>
           <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
@@ -611,11 +606,11 @@ function FieldsTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "" });
+  const [form, setForm] = useState({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "production" });
 
   const load = async () => {
     setLoading(true);
-    try { const r = await api.get("/api/fields"); setList(r.data); }
+    try { const r = await api.get("/api/fields", { params: { panel: "admin" } }); setList(r.data); }
     catch { showToast("Maydonlarni olishda xato", "error"); }
     finally { setLoading(false); }
   };
@@ -624,11 +619,13 @@ function FieldsTab() {
 
   const save = async e => {
     e.preventDefault();
-    if (!form.name || !form.label || !form.module) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
+    if (!form.name || !form.label) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
     try {
-      await api.post("/api/fields", form);
+      await api.post("/api/fields", { ...form, panel: "admin" });
       showToast("Maydon qo'shildi");
-      setModal(false); setForm({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "" }); load();
+      setModal(false);
+      setForm({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "production" });
+      load();
     } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
   };
 
@@ -641,7 +638,7 @@ function FieldsTab() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari</h2>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari (Admin)</h2>
         <Btn onClick={() => setModal(true)}>➕ Qo'shish</Btn>
       </div>
       {loading ? <Spinner /> : (
@@ -664,7 +661,7 @@ function FieldsTab() {
           </table>
         </div>
       )}
-      <Modal open={modal} onClose={() => setModal(false)} title="Maydon qo'shish">
+      <Modal open={modal} onClose={() => setModal(false)} title="Admin maydon qo'shish">
         <form onSubmit={save}>
           <Field label="Nomi (name)" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="field_name" required /></Field>
           <Field label="Sarlavha (label)" required><Inp value={form.label} onChange={v => setForm(p => ({ ...p, label: v }))} placeholder="Ko'rsatma matn" required /></Field>
@@ -679,7 +676,14 @@ function FieldsTab() {
           {form.field_type === "select" && (
             <Field label="Variantlar (vergul bilan)"><Inp value={form.options} onChange={v => setForm(p => ({ ...p, options: v }))} placeholder="variant1,variant2" /></Field>
           )}
-          <Field label="Modul" required><Inp value={form.module} onChange={v => setForm(p => ({ ...p, module: v }))} placeholder="workers, materials..." required /></Field>
+          <Field label="Modul">
+            <Sel value={form.module} onChange={v => setForm(p => ({ ...p, module: v }))}>
+              <option value="production">Ishlab chiqarish</option>
+              <option value="workers">Ishchilar</option>
+              <option value="materials">Materiallar</option>
+              <option value="attendance">Davomat</option>
+            </Sel>
+          </Field>
           <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginBottom: "16px" }}>
             <input type="checkbox" checked={form.is_required} onChange={e => setForm(p => ({ ...p, is_required: e.target.checked }))} />
             <span style={{ fontSize: "14px", color: "#1e293b" }}>Majburiy maydon</span>

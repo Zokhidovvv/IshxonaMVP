@@ -87,6 +87,7 @@ class FormFieldCreate(BaseModel):
     options: Optional[str] = None
     is_required: bool = False
     module: str
+    panel: str = "admin"  # admin | sales
 
 class FormFieldOut(BaseModel):
     id: int
@@ -97,6 +98,7 @@ class FormFieldOut(BaseModel):
     is_required: bool
     is_active: bool
     module: str
+    panel: str = "admin"
     class Config:
         from_attributes = True
 

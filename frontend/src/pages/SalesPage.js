@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useToast } from "../components/Toast";
 import api from "../services/api";
+import DateRangeFilter from "../components/DateRangeFilter";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 const fmt = n => Number(n || 0).toLocaleString();
@@ -87,19 +88,22 @@ function IpTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ soni: "", narxi: "", date: todayStr() });
 
   const load = async () => {
     setLoading(true);
     try {
-      const today = todayStr();
-      const r = await api.get("/api/ip", { params: { start: today, end: today } });
+      const params = {};
+      if (filter.start) params.start = filter.start;
+      if (filter.end) params.end = filter.end;
+      const r = await api.get("/api/ip", { params });
       setList(r.data);
     } catch { showToast("Ma'lumotlarni olishda xato", "error"); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [filter]);
 
   const save = async e => {
     e.preventDefault();
@@ -149,7 +153,8 @@ function IpTab() {
       </div>
       {/* Jadval */}
       <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>Bugungi kiritilganlar</h3>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
+        <DateRangeFilter filter={filter} onChange={setFilter} />
         {loading ? <Spinner /> : (
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
@@ -185,19 +190,22 @@ function SkochTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ razmer: "40", soni: "", date: todayStr() });
 
   const load = async () => {
     setLoading(true);
     try {
-      const today = todayStr();
-      const r = await api.get("/api/skoch", { params: { start: today, end: today } });
+      const params = {};
+      if (filter.start) params.start = filter.start;
+      if (filter.end) params.end = filter.end;
+      const r = await api.get("/api/skoch", { params });
       setList(r.data);
     } catch { showToast("Xato", "error"); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [filter]);
 
   const save = async e => {
     e.preventDefault();
@@ -253,7 +261,8 @@ function SkochTab() {
         </form>
       </div>
       <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>Bugungi kiritilganlar</h3>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
+        <DateRangeFilter filter={filter} onChange={setFilter} />
         {loading ? <Spinner /> : (
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
@@ -290,19 +299,22 @@ function MaterialTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() });
 
   const load = async () => {
     setLoading(true);
     try {
-      const today = todayStr();
-      const r = await api.get("/api/materials", { params: { start: today, end: today } });
+      const params = {};
+      if (filter.start) params.start = filter.start;
+      if (filter.end) params.end = filter.end;
+      const r = await api.get("/api/materials", { params });
       setList(r.data);
     } catch { showToast("Xato", "error"); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [filter]);
 
   const save = async e => {
     e.preventDefault();
@@ -347,7 +359,8 @@ function MaterialTab() {
         </form>
       </div>
       <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>Bugungi kiritilganlar</h3>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
+        <DateRangeFilter filter={filter} onChange={setFilter} />
         {loading ? <Spinner /> : (
           <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -378,19 +391,22 @@ function ToshTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ turi: "", soni: "", narxi: "", date: todayStr() });
 
   const load = async () => {
     setLoading(true);
     try {
-      const today = todayStr();
-      const r = await api.get("/api/tosh", { params: { start: today, end: today } });
+      const params = {};
+      if (filter.start) params.start = filter.start;
+      if (filter.end) params.end = filter.end;
+      const r = await api.get("/api/tosh", { params });
       setList(r.data);
     } catch { showToast("Xato", "error"); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [filter]);
 
   const save = async e => {
     e.preventDefault();
@@ -442,7 +458,8 @@ function ToshTab() {
         </form>
       </div>
       <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>Bugungi kiritilganlar</h3>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
+        <DateRangeFilter filter={filter} onChange={setFilter} />
         {loading ? <Spinner /> : (
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
@@ -470,6 +487,54 @@ function ToshTab() {
   );
 }
 
+// ─── FIELDS TAB (Sales: faqat ko'rish) ───────────────────────────────────────
+
+function FieldsTab() {
+  const { showToast } = useToast();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try { const r = await api.get("/api/fields", { params: { panel: "sales" } }); setList(Array.isArray(r.data) ? r.data : []); }
+    catch { showToast("Maydonlarni olishda xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const TH2 = ({ children }) => <th style={{ padding: "11px 14px", textAlign: "left", background: "#f8fafc", color: "#64748b", fontWeight: 600, fontSize: "13px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>{children}</th>;
+  const TD2 = ({ children }) => <td style={{ padding: "10px 14px", fontSize: "14px", color: "#1e293b", borderBottom: "1px solid #f1f5f9" }}>{children}</td>;
+
+  return (
+    <div>
+      <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b", marginBottom: "20px" }}>📋 Forma maydonlari</h2>
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
+          <div style={{ width: "36px", height: "36px", border: "4px solid #e2e8f0", borderTopColor: "#2d6a4f", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr><TH2>Nomi</TH2><TH2>Label</TH2><TH2>Turi</TH2><TH2>Majburiy</TH2></tr></thead>
+            <tbody>
+              {list.map((f, i) => (
+                <tr key={f.id} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc" }}>
+                  <TD2>{f.name}</TD2>
+                  <TD2>{f.label}</TD2>
+                  <TD2><span style={{ padding: "3px 8px", background: "#f0fdf4", color: "#2d6a4f", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD2>
+                  <TD2>{f.is_required ? "✅" : "—"}</TD2>
+                </tr>
+              ))}
+              {!list.length && <tr><td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN SALES PAGE ──────────────────────────────────────────────────────────
 
 const SIDEBAR_TABS = [
@@ -477,6 +542,7 @@ const SIDEBAR_TABS = [
   { id: "skoch", icon: "📦", label: "Skoch" },
   { id: "material", icon: "🧵", label: "Material" },
   { id: "tosh", icon: "🪨", label: "Tosh" },
+  { id: "fields", icon: "📋", label: "Forma maydonlari" },
 ];
 
 export default function SalesPage() {
@@ -489,6 +555,7 @@ export default function SalesPage() {
       case "skoch": return <SkochTab />;
       case "material": return <MaterialTab />;
       case "tosh": return <ToshTab />;
+      case "fields": return <FieldsTab />;
       default: return null;
     }
   };

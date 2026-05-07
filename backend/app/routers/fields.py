@@ -9,14 +9,21 @@ from ..core.dependencies import require_role
 router = APIRouter(prefix="/api/fields", tags=["fields"])
 
 @router.get("/", response_model=List[FormFieldOut])
-def get_fields(module: Optional[str] = None, db: Session = Depends(get_db), _=Depends(require_role("admin", "sales", "boss"))):
+def get_fields(
+    module: Optional[str] = None,
+    panel: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _=Depends(require_role("admin", "sales", "boss"))
+):
     q = db.query(FormField).filter(FormField.is_active == True)
     if module:
         q = q.filter(FormField.module == module)
+    if panel:
+        q = q.filter(FormField.panel == panel)
     return q.all()
 
 @router.post("/", response_model=FormFieldOut)
-def create_field(data: FormFieldCreate, db: Session = Depends(get_db), _=Depends(require_role("admin"))):
+def create_field(data: FormFieldCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):
     field = FormField(**data.model_dump())
     db.add(field)
     db.commit()
@@ -24,7 +31,7 @@ def create_field(data: FormFieldCreate, db: Session = Depends(get_db), _=Depends
     return field
 
 @router.put("/{field_id}", response_model=FormFieldOut)
-def update_field(field_id: int, data: FormFieldCreate, db: Session = Depends(get_db), _=Depends(require_role("admin"))):
+def update_field(field_id: int, data: FormFieldCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):
     field = db.query(FormField).filter(FormField.id == field_id).first()
     if not field:
         raise HTTPException(404, "Maydon topilmadi")
@@ -35,7 +42,7 @@ def update_field(field_id: int, data: FormFieldCreate, db: Session = Depends(get
     return field
 
 @router.delete("/{field_id}")
-def delete_field(field_id: int, db: Session = Depends(get_db), _=Depends(require_role("admin"))):
+def delete_field(field_id: int, db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):
     field = db.query(FormField).filter(FormField.id == field_id).first()
     if not field:
         raise HTTPException(404, "Maydon topilmadi")

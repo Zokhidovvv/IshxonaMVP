@@ -6,6 +6,7 @@ import { useToast } from "../components/Toast";
 import api from "../services/api";
 import * as XLSX from "xlsx";
 import { Line, Bar } from "react-chartjs-2";
+import DateRangeFilter from "../components/DateRangeFilter";
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
   LineElement, PointElement, BarElement,
@@ -160,6 +161,7 @@ const SIDEBAR_TABS = [
   { id: "materials", icon: "🧵", label: "Materiallar" },
   { id: "production", icon: "💰", label: "Kunlik maosh" },
   { id: "attendance", icon: "🗓", label: "Davomat" },
+  { id: "fields", icon: "📋", label: "Forma maydonlari" },
   { id: "users", icon: "👥", label: "Foydalanuvchilar" },
 ];
 
@@ -369,11 +371,7 @@ function MaterialsTab() {
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>🧵 Materiallar</h2>
         <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
       </div>
-      <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-        <div><label style={{ fontSize: "13px", color: "#64748b", marginRight: "6px" }}>Dan:</label><input type="date" value={filter.start} onChange={e => setFilter(p => ({ ...p, start: e.target.value }))} style={dateInp} /></div>
-        <div><label style={{ fontSize: "13px", color: "#64748b", marginRight: "6px" }}>Gacha:</label><input type="date" value={filter.end} onChange={e => setFilter(p => ({ ...p, end: e.target.value }))} style={dateInp} /></div>
-        {(filter.start || filter.end) && <Btn style={{ variant: "muted" }} onClick={() => setFilter({ start: "", end: "" })}>Tozalash ✕</Btn>}
-      </div>
+      <DateRangeFilter filter={filter} onChange={setFilter} />
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -431,15 +429,13 @@ function ProductionTab() {
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>💰 Kunlik maosh</h2>
         <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
       </div>
-      <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
-        <select value={filter.worker_id} onChange={e => setFilter(p => ({ ...p, worker_id: e.target.value }))} style={{ ...dateInp, minWidth: "160px" }}>
+      <div style={{ marginBottom: "10px" }}>
+        <select value={filter.worker_id} onChange={e => setFilter(p => ({ ...p, worker_id: e.target.value }))} style={{ ...dateInp, minWidth: "180px" }}>
           <option value="">Barcha ishchilar</option>
           {workers.map(w => <option key={w.id} value={w.id}>{w.firstname} {w.lastname}</option>)}
         </select>
-        <input type="date" value={filter.start} onChange={e => setFilter(p => ({ ...p, start: e.target.value }))} style={dateInp} />
-        <input type="date" value={filter.end} onChange={e => setFilter(p => ({ ...p, end: e.target.value }))} style={dateInp} />
-        {(filter.worker_id || filter.start || filter.end) && <Btn style={{ variant: "muted" }} onClick={() => setFilter({ worker_id: "", start: "", end: "" })}>Tozalash ✕</Btn>}
       </div>
+      <DateRangeFilter filter={filter} onChange={v => setFilter(p => ({ ...p, ...v }))} />
       {loading ? <Spinner /> : (
         <>
           <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
@@ -559,6 +555,129 @@ function AttendanceTab() {
             </tbody>
           </table>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ─── FIELDS TAB (Boss: ko'rish + CRUD, admin va sales panelidagi maydonlar) ───
+
+const PANEL_TABS = [
+  { id: "admin", label: "📋 Admin maydonlari" },
+  { id: "sales", label: "💰 Sales maydonlari" },
+];
+
+function FieldsTab() {
+  const { showToast } = useToast();
+  const [panelView, setPanelView] = useState("admin");
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "" });
+
+  const load = async () => {
+    setLoading(true);
+    try { const r = await api.get("/api/fields", { params: { panel: panelView } }); setList(Array.isArray(r.data) ? r.data : []); }
+    catch { showToast("Maydonlarni olishda xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, [panelView]);
+
+  const openAdd = () => {
+    setForm({ name: "", label: "", field_type: "text", options: "", is_required: false, module: panelView === "admin" ? "production" : "sales" });
+    setModal(true);
+  };
+
+  const save = async e => {
+    e.preventDefault();
+    if (!form.name || !form.label) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
+    try {
+      await api.post("/api/fields", { ...form, panel: panelView });
+      showToast("Maydon qo'shildi");
+      setModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+  };
+
+  const del = async id => {
+    if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
+    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari</h2>
+        <Btn onClick={openAdd}>➕ Qo'shish</Btn>
+      </div>
+
+      {/* Panel toggle */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+        {PANEL_TABS.map(pt => {
+          const on = panelView === pt.id;
+          return (
+            <button key={pt.id} onClick={() => setPanelView(pt.id)} style={{
+              padding: "8px 18px", borderRadius: "8px", cursor: "pointer", minHeight: "40px",
+              border: `1.5px solid ${on ? "#1e3a5f" : "#cbd5e1"}`,
+              background: on ? "#1e3a5f" : "#fff",
+              color: on ? "#fff" : "#64748b",
+              fontWeight: on ? 700 : 400, fontSize: "14px",
+            }}>{pt.label}</button>
+          );
+        })}
+      </div>
+
+      {loading ? <Spinner /> : (
+        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH></TH></tr></thead>
+            <tbody>
+              {list.map((f, i) => (
+                <TRow key={f.id} idx={i}>
+                  <TD>{f.name}</TD>
+                  <TD>{f.label}</TD>
+                  <TD><span style={{ padding: "3px 8px", background: "#f0fdf4", color: "#2d6a4f", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
+                  <TD>{f.module}</TD>
+                  <TD>{f.is_required ? "✅" : "—"}</TD>
+                  <TD>
+                    <button onClick={() => del(f.id)} style={{ padding: "6px 12px", borderRadius: "6px", border: "none", background: "#fee2e2", color: "#ef4444", cursor: "pointer", fontWeight: 700, minHeight: "36px" }}>🗑️</button>
+                  </TD>
+                </TRow>
+              ))}
+              {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modal && (
+        <Modal title={`${panelView === "admin" ? "Admin" : "Sales"} maydon qo'shish`} onClose={() => setModal(false)}>
+          <form onSubmit={save}>
+            <Field label="Nomi (name)" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="field_name" required /></Field>
+            <Field label="Sarlavha (label)" required><Inp value={form.label} onChange={v => setForm(p => ({ ...p, label: v }))} placeholder="Ko'rsatma matn" required /></Field>
+            <Field label="Turi">
+              <Sel value={form.field_type} onChange={v => setForm(p => ({ ...p, field_type: v }))}>
+                <option value="text">Matn</option>
+                <option value="number">Raqam</option>
+                <option value="select">Tanlash</option>
+                <option value="date">Sana</option>
+              </Sel>
+            </Field>
+            {form.field_type === "select" && (
+              <Field label="Variantlar (vergul bilan)"><Inp value={form.options} onChange={v => setForm(p => ({ ...p, options: v }))} placeholder="variant1,variant2" /></Field>
+            )}
+            <Field label="Modul"><Inp value={form.module} onChange={v => setForm(p => ({ ...p, module: v }))} placeholder="production, sales..." /></Field>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginBottom: "16px" }}>
+              <input type="checkbox" checked={form.is_required} onChange={e => setForm(p => ({ ...p, is_required: e.target.checked }))} />
+              <span style={{ fontSize: "14px", color: "#1e293b" }}>Majburiy maydon</span>
+            </label>
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
+              <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );
@@ -688,6 +807,7 @@ export default function BossPanel() {
       case "materials": return <MaterialsTab />;
       case "production": return <ProductionTab />;
       case "attendance": return <AttendanceTab />;
+      case "fields": return <FieldsTab />;
       case "users": return <UsersTab />;
       default: return null;
     }

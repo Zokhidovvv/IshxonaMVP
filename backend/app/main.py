@@ -1,10 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from .database import engine, Base
 from .routers import auth, workers, production, sales, dashboard, users, fields, materials, ip, skoch, tosh, attendance
 from .models import ip_log, skoch_log, tosh_log, attendance as attendance_model
 
 Base.metadata.create_all(bind=engine)
+
+# Migrate: add panel column to form_fields if missing
+with engine.connect() as _conn:
+    try:
+        _conn.execute(text("ALTER TABLE form_fields ADD COLUMN IF NOT EXISTS panel VARCHAR(50) DEFAULT 'admin'"))
+        _conn.execute(text("UPDATE form_fields SET panel = 'admin' WHERE panel IS NULL"))
+        _conn.commit()
+    except Exception:
+        _conn.rollback()
 
 app = FastAPI(title="Factory API", version="1.0.0", docs_url="/docs")
 
