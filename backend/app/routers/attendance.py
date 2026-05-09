@@ -91,6 +91,15 @@ def update_attendance(
     db.refresh(rec)
     return rec
 
+@router.delete("/{att_id}")
+def delete_attendance(att_id: int, db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):
+    from fastapi import HTTPException
+    rec = db.query(Attendance).filter(Attendance.id == att_id).first()
+    if not rec:
+        raise HTTPException(404, "Davomat topilmadi")
+    db.delete(rec); db.commit()
+    return {"message": "O'chirildi"}
+
 @router.get("/stats")
 def attendance_stats(
     month: str = Query(..., description="Format: 2024-04"),

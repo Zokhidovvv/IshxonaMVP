@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import Modal from "../components/Modal";
 import { useToast } from "../components/Toast";
 import api from "../services/api";
 import DateRangeFilter from "../components/DateRangeFilter";
@@ -74,8 +75,16 @@ function TotalCard({ label, value }) {
 
 function DelBtn({ onClick }) {
   return (
-    <button onClick={onClick} style={{ padding: "8px 12px", borderRadius: "6px", border: "none", background: "#fee2e2", color: "#ef4444", cursor: "pointer", fontSize: "14px", fontWeight: 700, minHeight: "44px" }}>
+    <button onClick={onClick} style={{ padding: "8px 12px", borderRadius: "6px", border: "none", background: "#fee2e2", color: "#ef4444", cursor: "pointer", fontSize: "14px", fontWeight: 700, minHeight: "40px" }}>
       🗑️
+    </button>
+  );
+}
+
+function EditBtn({ onClick }) {
+  return (
+    <button onClick={onClick} style={{ padding: "8px 12px", borderRadius: "6px", border: "none", background: "#dbeafe", color: "#2563eb", cursor: "pointer", fontSize: "14px", fontWeight: 700, minHeight: "40px" }}>
+      ✏️
     </button>
   );
 }
@@ -88,6 +97,9 @@ function IpTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({ soni: "", narxi: "", date: "" });
   const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ soni: "", narxi: "", date: todayStr() });
 
@@ -118,16 +130,26 @@ function IpTab() {
     finally { setSaving(false); }
   };
 
+  const openEdit = l => { setEditItem(l); setEditForm({ soni: l.soni, narxi: l.narxi, date: l.date }); setEditModal(true); };
+
+  const saveEdit = async e => {
+    e.preventDefault();
+    try {
+      await api.put(`/api/ip/${editItem.id}`, { soni: parseInt(editForm.soni), narxi: parseFloat(editForm.narxi), date: editForm.date });
+      showToast("Saqlandi ✅"); setEditModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
   const del = async id => {
-    try { await api.delete(`/api/ip/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/ip/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 3fr", gap: "24px" }}>
-      {/* Forma */}
       <div>
         <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>🪡 Ip kiritish</h3>
         <form onSubmit={save}>
@@ -151,7 +173,6 @@ function IpTab() {
           <SubmitBtn loading={saving}>➕ Qo'shish</SubmitBtn>
         </form>
       </div>
-      {/* Jadval */}
       <div>
         <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
         <DateRangeFilter filter={filter} onChange={setFilter} />
@@ -159,7 +180,7 @@ function IpTab() {
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <thead><tr><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
                 <tbody>
                   {list.map((l, i) => (
                     <TRow key={l.id} idx={i}>
@@ -167,17 +188,40 @@ function IpTab() {
                       <TD>{fmt(l.narxi)} so'm</TD>
                       <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
                       <TD>{l.date}</TD>
-                      <TD><DelBtn onClick={() => del(l.id)} /></TD>
+                      <TD><div style={{ display: "flex", gap: "6px" }}>
+                        <EditBtn onClick={() => openEdit(l)} />
+                        <DelBtn onClick={() => del(l.id)} />
+                      </div></TD>
                     </TRow>
                   ))}
                   {!list.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
                 </tbody>
               </table>
             </div>
-            {list.length > 0 && <TotalCard label="Bugungi jami" value={total} />}
+            {list.length > 0 && <TotalCard label="Jami" value={total} />}
           </>
         )}
       </div>
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Ipni tahrirlash">
+        <form onSubmit={saveEdit}>
+          <Field label="Soni (pachka)" required>
+            <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Narxi (so'm)" required>
+            <input type="number" value={editForm.narxi} onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))} style={inp} min="0" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <button type="button" onClick={() => setEditModal(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#f1f5f9", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Bekor</button>
+            <button type="submit" style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#2d6a4f", color: "#fff", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Saqlash</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -190,6 +234,9 @@ function SkochTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({ razmer: "40", soni: "", date: "" });
   const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ razmer: "40", soni: "", date: todayStr() });
 
@@ -221,9 +268,21 @@ function SkochTab() {
     finally { setSaving(false); }
   };
 
+  const openEdit = l => { setEditItem(l); setEditForm({ razmer: l.razmer, soni: l.soni, date: l.date }); setEditModal(true); };
+
+  const saveEdit = async e => {
+    e.preventDefault();
+    const narxi = SKOCH_PRICES[editForm.razmer];
+    try {
+      await api.put(`/api/skoch/${editItem.id}`, { razmer: editForm.razmer, soni: parseInt(editForm.soni), narxi, date: editForm.date });
+      showToast("Saqlandi ✅"); setEditModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
   const del = async id => {
-    try { await api.delete(`/api/skoch/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/skoch/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
@@ -267,7 +326,7 @@ function SkochTab() {
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr><TH>Razmer</TH><TH>Narxi</TH><TH>Soni</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <thead><tr><TH>Razmer</TH><TH>Narxi</TH><TH>Soni</TH><TH>Jami</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
                 <tbody>
                   {list.map((l, i) => (
                     <TRow key={l.id} idx={i}>
@@ -276,17 +335,44 @@ function SkochTab() {
                       <TD>{l.soni} dona</TD>
                       <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
                       <TD>{l.date}</TD>
-                      <TD><DelBtn onClick={() => del(l.id)} /></TD>
+                      <TD><div style={{ display: "flex", gap: "6px" }}>
+                        <EditBtn onClick={() => openEdit(l)} />
+                        <DelBtn onClick={() => del(l.id)} />
+                      </div></TD>
                     </TRow>
                   ))}
                   {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
                 </tbody>
               </table>
             </div>
-            {list.length > 0 && <TotalCard label="Bugungi jami" value={total} />}
+            {list.length > 0 && <TotalCard label="Jami" value={total} />}
           </>
         )}
       </div>
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Skochni tahrirlash">
+        <form onSubmit={saveEdit}>
+          <Field label="Razmer" required>
+            <select value={editForm.razmer} onChange={e => setEditForm(p => ({ ...p, razmer: e.target.value }))} style={inp}>
+              <option value="40">40 mm</option><option value="32">32 mm</option><option value="28">28 mm</option>
+            </select>
+          </Field>
+          <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "14px", fontSize: "14px", color: "#1e3a5f" }}>
+            💡 Narxi: <strong>{fmt(SKOCH_PRICES[editForm.razmer])} so'm</strong>
+          </div>
+          <Field label="Soni (dona)" required>
+            <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <button type="button" onClick={() => setEditModal(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#f1f5f9", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Bekor</button>
+            <button type="submit" style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#2d6a4f", color: "#fff", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Saqlash</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -299,6 +385,9 @@ function MaterialTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: "" });
   const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() });
 
@@ -329,9 +418,20 @@ function MaterialTab() {
     finally { setSaving(false); }
   };
 
+  const openEdit = m => { setEditItem(m); setEditForm({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date }); setEditModal(true); };
+
+  const saveEdit = async e => {
+    e.preventDefault();
+    try {
+      await api.put(`/api/materials/${editItem.id}`, { name: editForm.name, quantity_rolls: parseInt(editForm.quantity_rolls), length_meters: parseFloat(editForm.length_meters), date: editForm.date });
+      showToast("Saqlandi ✅"); setEditModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
   const del = async id => {
-    try { await api.delete(`/api/materials/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/materials/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   return (
@@ -364,13 +464,16 @@ function MaterialTab() {
         {loading ? <Spinner /> : (
           <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr><TH>Nomi</TH><TH>Rulon</TH><TH>Uzunlik</TH><TH>Sana</TH><TH></TH></tr></thead>
+              <thead><tr><TH>Nomi</TH><TH>Rulon</TH><TH>Uzunlik</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
               <tbody>
                 {list.map((m, i) => (
                   <TRow key={m.id} idx={i}>
                     <TD>{m.name}</TD><TD>{m.quantity_rolls} ta</TD>
                     <TD>{m.length_meters} m</TD><TD>{m.date}</TD>
-                    <TD><DelBtn onClick={() => del(m.id)} /></TD>
+                    <TD><div style={{ display: "flex", gap: "6px" }}>
+                      <EditBtn onClick={() => openEdit(m)} />
+                      <DelBtn onClick={() => del(m.id)} />
+                    </div></TD>
                   </TRow>
                 ))}
                 {!list.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
@@ -379,6 +482,30 @@ function MaterialTab() {
           </div>
         )}
       </div>
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Materialni tahrirlash">
+        <form onSubmit={saveEdit}>
+          <Field label="Nomi" required>
+            <input type="text" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Rulon soni" required>
+            <input type="number" value={editForm.quantity_rolls} onChange={e => setEditForm(p => ({ ...p, quantity_rolls: e.target.value }))} style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Uzunlik (m)" required>
+            <input type="number" value={editForm.length_meters} onChange={e => setEditForm(p => ({ ...p, length_meters: e.target.value }))} style={inp} min="0" step="0.1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <button type="button" onClick={() => setEditModal(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#f1f5f9", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Bekor</button>
+            <button type="submit" style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#2d6a4f", color: "#fff", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Saqlash</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -391,6 +518,9 @@ function ToshTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({ turi: "", soni: "", narxi: "", date: "" });
   const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ turi: "", soni: "", narxi: "", date: todayStr() });
 
@@ -421,9 +551,20 @@ function ToshTab() {
     finally { setSaving(false); }
   };
 
+  const openEdit = l => { setEditItem(l); setEditForm({ turi: l.turi, soni: l.soni, narxi: l.narxi, date: l.date }); setEditModal(true); };
+
+  const saveEdit = async e => {
+    e.preventDefault();
+    try {
+      await api.put(`/api/tosh/${editItem.id}`, { turi: editForm.turi, soni: parseInt(editForm.soni), narxi: parseFloat(editForm.narxi), date: editForm.date });
+      showToast("Saqlandi ✅"); setEditModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
   const del = async id => {
-    try { await api.delete(`/api/tosh/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/tosh/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
@@ -464,7 +605,7 @@ function ToshTab() {
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr><TH>Turi</TH><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <thead><tr><TH>Turi</TH><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
                 <tbody>
                   {list.map((l, i) => (
                     <TRow key={l.id} idx={i}>
@@ -472,7 +613,10 @@ function ToshTab() {
                       <TD>{fmt(l.narxi)} so'm</TD>
                       <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
                       <TD>{l.date}</TD>
-                      <TD><DelBtn onClick={() => del(l.id)} /></TD>
+                      <TD><div style={{ display: "flex", gap: "6px" }}>
+                        <EditBtn onClick={() => openEdit(l)} />
+                        <DelBtn onClick={() => del(l.id)} />
+                      </div></TD>
                     </TRow>
                   ))}
                   {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
@@ -483,6 +627,30 @@ function ToshTab() {
           </>
         )}
       </div>
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Toshni tahrirlash">
+        <form onSubmit={saveEdit}>
+          <Field label="Turi" required>
+            <input type="text" value={editForm.turi} onChange={e => setEditForm(p => ({ ...p, turi: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Soni (pachka)" required>
+            <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Narxi (so'm)" required>
+            <input type="number" value={editForm.narxi} onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))} style={inp} min="0" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <button type="button" onClick={() => setEditModal(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#f1f5f9", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Bekor</button>
+            <button type="submit" style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#2d6a4f", color: "#fff", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Saqlash</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

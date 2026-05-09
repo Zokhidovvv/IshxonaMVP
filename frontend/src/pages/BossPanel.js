@@ -390,6 +390,7 @@ function AdminMaterialsTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState({ start: "", end: "" });
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState({ key: "date", dir: -1 });
@@ -409,20 +410,24 @@ function AdminMaterialsTab() {
 
   useEffect(() => { load(); }, [filter]);
 
+  const openAdd = () => { setEditing(null); setForm({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() }); setModal(true); };
+  const openEdit = m => { setEditing(m); setForm({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date }); setModal(true); };
+
   const save = async e => {
     e.preventDefault();
     if (!form.name || !form.quantity_rolls || !form.length_meters) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
     try {
-      await api.post("/api/materials", { name: form.name, quantity_rolls: parseInt(form.quantity_rolls), length_meters: parseFloat(form.length_meters), date: form.date });
-      showToast("Qo'shildi"); setModal(false);
-      setForm({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() }); load();
-    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+      const body = { name: form.name, quantity_rolls: parseInt(form.quantity_rolls), length_meters: parseFloat(form.length_meters), date: form.date };
+      if (editing) { await api.put(`/api/materials/${editing.id}`, body); showToast("Saqlandi ✅"); }
+      else { await api.post("/api/materials", body); showToast("Qo'shildi"); }
+      setModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
   };
 
   const del = async id => {
     if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
-    try { await api.delete(`/api/materials/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    try { await api.delete(`/api/materials/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const toggleSort = key => setSort(p => ({ key, dir: p.key === key ? -p.dir : 1 }));
@@ -446,7 +451,7 @@ function AdminMaterialsTab() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Qidirish..."
             style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", minWidth: "140px", outline: "none" }} />
           <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
-          <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+          <BtnSm onClick={openAdd}>➕ Qo'shish</BtnSm>
         </div>
       </div>
       <DateRangeFilter filter={filter} onChange={setFilter} />
@@ -464,7 +469,10 @@ function AdminMaterialsTab() {
               {sorted.map((m, i) => (
                 <TRow key={m.id} idx={i}>
                   <TD>{m.name}</TD><TD>{m.quantity_rolls}</TD><TD>{m.length_meters}</TD><TD>{m.date}</TD>
-                  <TD><BtnSm variant="danger" onClick={() => del(m.id)}>🗑️</BtnSm></TD>
+                  <TD><div style={{ display: "flex", gap: "6px" }}>
+                    <BtnSm onClick={() => openEdit(m)}>✏️</BtnSm>
+                    <BtnSm variant="danger" onClick={() => del(m.id)}>🗑️</BtnSm>
+                  </div></TD>
                 </TRow>
               ))}
               {!sorted.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>{search ? "Topilmadi" : "Ma'lumot yo'q"}</td></tr>}
@@ -472,7 +480,7 @@ function AdminMaterialsTab() {
           </table>
         </div>
       )}
-      <Modal open={modal} onClose={() => setModal(false)} title="Material qo'shish">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "Materialni tahrirlash" : "Material qo'shish"}>
         <form onSubmit={save}>
           <Field label="Nomi" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Material nomi" required /></Field>
           <Field label="Rulon soni" required><Inp type="number" value={form.quantity_rolls} onChange={v => setForm(p => ({ ...p, quantity_rolls: v }))} placeholder="Rulon soni" required min="1" /></Field>
@@ -496,6 +504,7 @@ function AdminProductionTab() {
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState({ worker_id: "", start: "", end: "" });
   const [form, setForm] = useState({ worker_id: "", daily_salary: "", date: todayStr() });
 
@@ -519,14 +528,24 @@ function AdminProductionTab() {
   const workerName = id => { const w = workers.find(w => w.id === id); return w ? `${w.firstname} ${w.lastname}` : "—"; };
   const total = list.reduce((s, l) => s + Number(l.daily_salary || 0), 0);
 
+  const openAdd = () => { setEditing(null); setForm(p => ({ ...p, daily_salary: "" })); setModal(true); };
+  const openEdit = l => { setEditing(l); setForm({ worker_id: l.worker_id, daily_salary: l.daily_salary, date: l.date }); setModal(true); };
+
   const save = async e => {
     e.preventDefault();
     if (!form.worker_id || !form.daily_salary || !form.date) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
     try {
-      await api.post("/api/production", { worker_id: parseInt(form.worker_id), daily_salary: parseFloat(form.daily_salary), date: form.date });
-      showToast("Maosh kiritildi"); setModal(false);
-      setForm(p => ({ ...p, daily_salary: "" })); load();
-    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+      const body = { worker_id: parseInt(form.worker_id), daily_salary: parseFloat(form.daily_salary), date: form.date };
+      if (editing) { await api.put(`/api/production/${editing.id}`, body); showToast("Saqlandi ✅"); }
+      else { await api.post("/api/production", body); showToast("Maosh kiritildi"); }
+      setModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
+  const del = async id => {
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/production/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const doExport = () => exportXLSX(
@@ -541,7 +560,7 @@ function AdminProductionTab() {
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>💰 Kunlik maosh</h2>
         <div style={{ display: "flex", gap: "8px" }}>
           <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
-          <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+          <BtnSm onClick={openAdd}>➕ Qo'shish</BtnSm>
         </div>
       </div>
       <div style={{ marginBottom: "10px" }}>
@@ -555,16 +574,20 @@ function AdminProductionTab() {
         <>
           <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr><TH>Ishchi</TH><TH>Maosh (so'm)</TH><TH>Sana</TH></tr></thead>
+              <thead><tr><TH>Ishchi</TH><TH>Maosh (so'm)</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
               <tbody>
                 {list.map((l, i) => (
                   <TRow key={l.id} idx={i}>
                     <TD>{workerName(l.worker_id)}</TD>
                     <TD><span style={{ fontWeight: 600, color: "#10b981" }}>{fmt(l.daily_salary)} so'm</span></TD>
                     <TD>{l.date}</TD>
+                    <TD><div style={{ display: "flex", gap: "6px" }}>
+                      <BtnSm onClick={() => openEdit(l)}>✏️</BtnSm>
+                      <BtnSm variant="danger" onClick={() => del(l.id)}>🗑️</BtnSm>
+                    </div></TD>
                   </TRow>
                 ))}
-                {!list.length && <tr><td colSpan={3} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+                {!list.length && <tr><td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
               </tbody>
             </table>
           </div>
@@ -576,7 +599,7 @@ function AdminProductionTab() {
           )}
         </>
       )}
-      <Modal open={modal} onClose={() => setModal(false)} title="Maosh kiritish">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "Maoshni tahrirlash" : "Maosh kiritish"}>
         <form onSubmit={save}>
           <Field label="Ishchi" required>
             <Sel value={form.worker_id} onChange={v => setForm(p => ({ ...p, worker_id: v }))}>
@@ -727,6 +750,7 @@ function AdminUsersTab() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ username: "", password: "", role: "sales" });
 
   const load = async () => {
@@ -738,23 +762,35 @@ function AdminUsersTab() {
 
   useEffect(() => { load(); }, []);
 
+  const openAdd = () => { setEditing(null); setForm({ username: "", password: "", role: "sales" }); setModal(true); };
+  const openEdit = u => { setEditing(u); setForm({ username: u.username, password: "", role: u.role }); setModal(true); };
+
   const save = async e => {
     e.preventDefault();
-    if (!form.username || !form.password) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
-    setSaving(true);
-    try {
-      await api.post("/api/users", form);
-      showToast("Foydalanuvchi qo'shildi");
-      setForm({ username: "", password: "", role: "sales" });
-      setModal(false); load();
-    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
-    finally { setSaving(false); }
+    if (editing) {
+      setSaving(true);
+      try {
+        await api.put(`/api/users/${editing.id}`, { role: form.role, password: form.password || undefined });
+        showToast("Saqlandi ✅"); setModal(false); load();
+      } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+      finally { setSaving(false); }
+    } else {
+      if (!form.username || !form.password) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
+      setSaving(true);
+      try {
+        await api.post("/api/users", form);
+        showToast("Foydalanuvchi qo'shildi");
+        setForm({ username: "", password: "", role: "sales" });
+        setModal(false); load();
+      } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+      finally { setSaving(false); }
+    }
   };
 
   const del = async id => {
     if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
-    try { await api.delete(`/api/users/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    try { await api.delete(`/api/users/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const doExport = () => exportXLSX(
@@ -769,20 +805,23 @@ function AdminUsersTab() {
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>👥 Foydalanuvchilar</h2>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
-          <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+          <BtnSm onClick={openAdd}>➕ Qo'shish</BtnSm>
         </div>
       </div>
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>ID</TH><TH>Login</TH><TH>Rol</TH><TH></TH></tr></thead>
+            <thead><tr><TH>ID</TH><TH>Login</TH><TH>Rol</TH><TH>Amallar</TH></tr></thead>
             <tbody>
               {list.map((u, i) => (
                 <TRow key={u.id} idx={i}>
                   <TD>{u.id}</TD>
                   <TD><span style={{ fontWeight: 600 }}>{u.username}</span></TD>
                   <TD><RoleBadge role={u.role} /></TD>
-                  <TD><DelBtn onClick={() => del(u.id)} /></TD>
+                  <TD><div style={{ display: "flex", gap: "6px" }}>
+                    <BtnSm onClick={() => openEdit(u)}>✏️</BtnSm>
+                    <BtnSm variant="danger" onClick={() => del(u.id)}>🗑️</BtnSm>
+                  </div></TD>
                 </TRow>
               ))}
               {!list.length && <tr><td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Foydalanuvchilar yo'q</td></tr>}
@@ -790,17 +829,20 @@ function AdminUsersTab() {
           </table>
         </div>
       )}
-      <Modal open={modal} onClose={() => setModal(false)} title="Yangi foydalanuvchi">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "Foydalanuvchini tahrirlash" : "Yangi foydalanuvchi"}>
         <form onSubmit={save}>
-          <Field label="Login" required><Inp value={form.username} onChange={v => setForm(p => ({ ...p, username: v }))} placeholder="foydalanuvchi nomi" required /></Field>
-          <Field label="Parol" required><Inp type="password" value={form.password} onChange={v => setForm(p => ({ ...p, password: v }))} placeholder="••••••••" required /></Field>
+          {!editing && <Field label="Login" required><Inp value={form.username} onChange={v => setForm(p => ({ ...p, username: v }))} placeholder="foydalanuvchi nomi" required /></Field>}
+          {editing && <div style={{ marginBottom: "14px", padding: "10px 14px", background: "#f8fafc", borderRadius: "8px", fontSize: "14px", color: "#64748b" }}>Login: <strong>{form.username}</strong></div>}
+          <Field label={editing ? "Yangi parol (ixtiyoriy)" : "Parol"} required={!editing}>
+            <Inp type="password" value={form.password} onChange={v => setForm(p => ({ ...p, password: v }))} placeholder="••••••••" required={!editing} />
+          </Field>
           <Field label="Rol" required>
             <Sel value={form.role} onChange={v => setForm(p => ({ ...p, role: v }))}>
               {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
             </Sel>
           </Field>
           <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
-            <Btn type="submit" disabled={saving} style={{ flex: 1 }}>{saving ? "Saqlanmoqda..." : "➕ Qo'shish"}</Btn>
+            <Btn type="submit" disabled={saving} style={{ flex: 1 }}>{saving ? "Saqlanmoqda..." : editing ? "Saqlash" : "➕ Qo'shish"}</Btn>
             <Btn onClick={() => setModal(false)} style={{ variant: "muted" }}>Bekor</Btn>
           </div>
         </form>
@@ -816,7 +858,9 @@ function AdminFieldsTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "production" });
+  const [editing, setEditing] = useState(null);
+  const blank = { name: "", label: "", field_type: "text", options: "", is_required: false, module: "production" };
+  const [form, setForm] = useState(blank);
 
   const load = async () => {
     setLoading(true);
@@ -827,32 +871,35 @@ function AdminFieldsTab() {
 
   useEffect(() => { load(); }, []);
 
+  const openAdd = () => { setEditing(null); setForm(blank); setModal(true); };
+  const openEdit = f => { setEditing(f); setForm({ name: f.name, label: f.label, field_type: f.field_type, options: f.options || "", is_required: f.is_required, module: f.module }); setModal(true); };
+
   const save = async e => {
     e.preventDefault();
     if (!form.name || !form.label) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
     try {
-      await api.post("/api/fields", { ...form, panel: "admin" });
-      showToast("Maydon qo'shildi"); setModal(false);
-      setForm({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "production" }); load();
-    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+      if (editing) { await api.put(`/api/fields/${editing.id}`, { ...form, panel: "admin" }); showToast("Saqlandi ✅"); }
+      else { await api.post("/api/fields", { ...form, panel: "admin" }); showToast("Maydon qo'shildi"); }
+      setModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
   };
 
   const del = async id => {
     if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
-    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari (Admin)</h2>
-        <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+        <BtnSm onClick={openAdd}>➕ Qo'shish</BtnSm>
       </div>
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH></TH></tr></thead>
+            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH>Amallar</TH></tr></thead>
             <tbody>
               {list.map((f, i) => (
                 <TRow key={f.id} idx={i}>
@@ -860,7 +907,10 @@ function AdminFieldsTab() {
                   <TD><span style={{ padding: "3px 8px", background: "#f0fdf4", color: "#2d6a4f", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
                   <TD>{f.module}</TD>
                   <TD>{f.is_required ? "✅" : "—"}</TD>
-                  <TD><DelBtn onClick={() => del(f.id)} /></TD>
+                  <TD><div style={{ display: "flex", gap: "6px" }}>
+                    <BtnSm onClick={() => openEdit(f)}>✏️</BtnSm>
+                    <BtnSm variant="danger" onClick={() => del(f.id)}>🗑️</BtnSm>
+                  </div></TD>
                 </TRow>
               ))}
               {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
@@ -868,7 +918,7 @@ function AdminFieldsTab() {
           </table>
         </div>
       )}
-      <Modal open={modal} onClose={() => setModal(false)} title="Admin maydon qo'shish">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "Maydonni tahrirlash" : "Admin maydon qo'shish"}>
         <form onSubmit={save}>
           <Field label="Nomi (name)" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="field_name" required /></Field>
           <Field label="Sarlavha (label)" required><Inp value={form.label} onChange={v => setForm(p => ({ ...p, label: v }))} placeholder="Ko'rsatma matn" required /></Field>
@@ -911,6 +961,9 @@ function SalesIpTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({ soni: "", narxi: "", date: "" });
   const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ soni: "", narxi: "", date: todayStr() });
 
@@ -939,9 +992,20 @@ function SalesIpTab() {
     finally { setSaving(false); }
   };
 
+  const openEdit = l => { setEditItem(l); setEditForm({ soni: l.soni, narxi: l.narxi, date: l.date }); setEditModal(true); };
+
+  const saveEdit = async e => {
+    e.preventDefault();
+    try {
+      await api.put(`/api/ip/${editItem.id}`, { soni: parseInt(editForm.soni), narxi: parseFloat(editForm.narxi), date: editForm.date });
+      showToast("Saqlandi ✅"); setEditModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
   const del = async id => {
-    try { await api.delete(`/api/ip/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/ip/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
@@ -978,13 +1042,17 @@ function SalesIpTab() {
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <thead><tr><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
                 <tbody>
                   {list.map((l, i) => (
                     <TRow key={l.id} idx={i}>
                       <TD>{l.soni} pachka</TD><TD>{fmt(l.narxi)} so'm</TD>
                       <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
-                      <TD>{l.date}</TD><TD><DelBtn onClick={() => del(l.id)} /></TD>
+                      <TD>{l.date}</TD>
+                      <TD><div style={{ display: "flex", gap: "6px" }}>
+                        <BtnSm onClick={() => openEdit(l)}>✏️</BtnSm>
+                        <DelBtn onClick={() => del(l.id)} />
+                      </div></TD>
                     </TRow>
                   ))}
                   {!list.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
@@ -995,6 +1063,26 @@ function SalesIpTab() {
           </>
         )}
       </div>
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Ipni tahrirlash">
+        <form onSubmit={saveEdit}>
+          <Field label="Soni (pachka)" required>
+            <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Narxi (so'm)" required>
+            <input type="number" value={editForm.narxi} onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))} style={inp} min="0" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setEditModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -1007,6 +1095,9 @@ function SalesSkochTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({ razmer: "40", soni: "", date: "" });
   const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ razmer: "40", soni: "", date: todayStr() });
 
@@ -1036,9 +1127,21 @@ function SalesSkochTab() {
     finally { setSaving(false); }
   };
 
+  const openEdit = l => { setEditItem(l); setEditForm({ razmer: l.razmer, soni: l.soni, date: l.date }); setEditModal(true); };
+
+  const saveEdit = async e => {
+    e.preventDefault();
+    const narxi = SKOCH_PRICES[editForm.razmer];
+    try {
+      await api.put(`/api/skoch/${editItem.id}`, { razmer: editForm.razmer, soni: parseInt(editForm.soni), narxi, date: editForm.date });
+      showToast("Saqlandi ✅"); setEditModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
   const del = async id => {
-    try { await api.delete(`/api/skoch/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/skoch/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
@@ -1080,13 +1183,17 @@ function SalesSkochTab() {
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr><TH>Razmer</TH><TH>Narxi</TH><TH>Soni</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <thead><tr><TH>Razmer</TH><TH>Narxi</TH><TH>Soni</TH><TH>Jami</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
                 <tbody>
                   {list.map((l, i) => (
                     <TRow key={l.id} idx={i}>
                       <TD>{l.razmer} mm</TD><TD>{fmt(l.narxi)} so'm</TD><TD>{l.soni} dona</TD>
                       <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
-                      <TD>{l.date}</TD><TD><DelBtn onClick={() => del(l.id)} /></TD>
+                      <TD>{l.date}</TD>
+                      <TD><div style={{ display: "flex", gap: "6px" }}>
+                        <BtnSm onClick={() => openEdit(l)}>✏️</BtnSm>
+                        <DelBtn onClick={() => del(l.id)} />
+                      </div></TD>
                     </TRow>
                   ))}
                   {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
@@ -1097,6 +1204,30 @@ function SalesSkochTab() {
           </>
         )}
       </div>
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Skochni tahrirlash">
+        <form onSubmit={saveEdit}>
+          <Field label="Razmer" required>
+            <select value={editForm.razmer} onChange={e => setEditForm(p => ({ ...p, razmer: e.target.value }))} style={inp}>
+              <option value="40">40 mm</option><option value="32">32 mm</option><option value="28">28 mm</option>
+            </select>
+          </Field>
+          <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "14px", fontSize: "14px", color: "#1e3a5f" }}>
+            💡 Narxi: <strong>{fmt(SKOCH_PRICES[editForm.razmer])} so'm</strong>
+          </div>
+          <Field label="Soni (dona)" required>
+            <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setEditModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -1109,6 +1240,9 @@ function SalesMaterialTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: "" });
   const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() });
 
@@ -1138,9 +1272,20 @@ function SalesMaterialTab() {
     finally { setSaving(false); }
   };
 
+  const openEdit = m => { setEditItem(m); setEditForm({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date }); setEditModal(true); };
+
+  const saveEdit = async e => {
+    e.preventDefault();
+    try {
+      await api.put(`/api/materials/${editItem.id}`, { name: editForm.name, quantity_rolls: parseInt(editForm.quantity_rolls), length_meters: parseFloat(editForm.length_meters), date: editForm.date });
+      showToast("Saqlandi ✅"); setEditModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
   const del = async id => {
-    try { await api.delete(`/api/materials/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/materials/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   return (
@@ -1173,13 +1318,16 @@ function SalesMaterialTab() {
         {loading ? <Spinner /> : (
           <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr><TH>Nomi</TH><TH>Rulon</TH><TH>Uzunlik</TH><TH>Sana</TH><TH></TH></tr></thead>
+              <thead><tr><TH>Nomi</TH><TH>Rulon</TH><TH>Uzunlik</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
               <tbody>
                 {list.map((m, i) => (
                   <TRow key={m.id} idx={i}>
                     <TD>{m.name}</TD><TD>{m.quantity_rolls} ta</TD>
                     <TD>{m.length_meters} m</TD><TD>{m.date}</TD>
-                    <TD><DelBtn onClick={() => del(m.id)} /></TD>
+                    <TD><div style={{ display: "flex", gap: "6px" }}>
+                      <BtnSm onClick={() => openEdit(m)}>✏️</BtnSm>
+                      <DelBtn onClick={() => del(m.id)} />
+                    </div></TD>
                   </TRow>
                 ))}
                 {!list.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
@@ -1188,6 +1336,30 @@ function SalesMaterialTab() {
           </div>
         )}
       </div>
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Materialni tahrirlash">
+        <form onSubmit={saveEdit}>
+          <Field label="Nomi" required>
+            <input type="text" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Rulon soni" required>
+            <input type="number" value={editForm.quantity_rolls} onChange={e => setEditForm(p => ({ ...p, quantity_rolls: e.target.value }))} style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Uzunlik (m)" required>
+            <input type="number" value={editForm.length_meters} onChange={e => setEditForm(p => ({ ...p, length_meters: e.target.value }))} style={inp} min="0" step="0.1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setEditModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -1200,6 +1372,9 @@ function SalesToshTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({ turi: "", soni: "", narxi: "", date: "" });
   const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
   const [form, setForm] = useState({ turi: "", soni: "", narxi: "", date: todayStr() });
 
@@ -1228,9 +1403,20 @@ function SalesToshTab() {
     finally { setSaving(false); }
   };
 
+  const openEdit = l => { setEditItem(l); setEditForm({ turi: l.turi, soni: l.soni, narxi: l.narxi, date: l.date }); setEditModal(true); };
+
+  const saveEdit = async e => {
+    e.preventDefault();
+    try {
+      await api.put(`/api/tosh/${editItem.id}`, { turi: editForm.turi, soni: parseInt(editForm.soni), narxi: parseFloat(editForm.narxi), date: editForm.date });
+      showToast("Saqlandi ✅"); setEditModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
+  };
+
   const del = async id => {
-    try { await api.delete(`/api/tosh/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
+    try { await api.delete(`/api/tosh/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
@@ -1271,14 +1457,18 @@ function SalesToshTab() {
           <>
             <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr><TH>Turi</TH><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <thead><tr><TH>Turi</TH><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
                 <tbody>
                   {list.map((l, i) => (
                     <TRow key={l.id} idx={i}>
                       <TD>{l.turi}</TD><TD>{l.soni} pachka</TD>
                       <TD>{fmt(l.narxi)} so'm</TD>
                       <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
-                      <TD>{l.date}</TD><TD><DelBtn onClick={() => del(l.id)} /></TD>
+                      <TD>{l.date}</TD>
+                      <TD><div style={{ display: "flex", gap: "6px" }}>
+                        <BtnSm onClick={() => openEdit(l)}>✏️</BtnSm>
+                        <DelBtn onClick={() => del(l.id)} />
+                      </div></TD>
                     </TRow>
                   ))}
                   {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
@@ -1289,6 +1479,30 @@ function SalesToshTab() {
           </>
         )}
       </div>
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Toshni tahrirlash">
+        <form onSubmit={saveEdit}>
+          <Field label="Turi" required>
+            <input type="text" value={editForm.turi} onChange={e => setEditForm(p => ({ ...p, turi: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Soni (pachka)" required>
+            <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Narxi (so'm)" required>
+            <input type="number" value={editForm.narxi} onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))} style={inp} min="0" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setEditModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -1300,7 +1514,9 @@ function SalesFieldsTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "sales" });
+  const [editing, setEditing] = useState(null);
+  const blank = { name: "", label: "", field_type: "text", options: "", is_required: false, module: "sales" };
+  const [form, setForm] = useState(blank);
 
   const load = async () => {
     setLoading(true);
@@ -1311,32 +1527,35 @@ function SalesFieldsTab() {
 
   useEffect(() => { load(); }, []);
 
+  const openAdd = () => { setEditing(null); setForm(blank); setModal(true); };
+  const openEdit = f => { setEditing(f); setForm({ name: f.name, label: f.label, field_type: f.field_type, options: f.options || "", is_required: f.is_required, module: f.module }); setModal(true); };
+
   const save = async e => {
     e.preventDefault();
     if (!form.name || !form.label) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
     try {
-      await api.post("/api/fields", { ...form, panel: "sales" });
-      showToast("Maydon qo'shildi"); setModal(false);
-      setForm({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "sales" }); load();
-    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+      if (editing) { await api.put(`/api/fields/${editing.id}`, { ...form, panel: "sales" }); showToast("Saqlandi ✅"); }
+      else { await api.post("/api/fields", { ...form, panel: "sales" }); showToast("Maydon qo'shildi"); }
+      setModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
   };
 
   const del = async id => {
     if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
-    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
+    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi ✅"); load(); }
+    catch { showToast("Xato ❌", "error"); }
   };
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari (Sales)</h2>
-        <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+        <BtnSm onClick={openAdd}>➕ Qo'shish</BtnSm>
       </div>
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH></TH></tr></thead>
+            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH>Amallar</TH></tr></thead>
             <tbody>
               {list.map((f, i) => (
                 <TRow key={f.id} idx={i}>
@@ -1344,7 +1563,10 @@ function SalesFieldsTab() {
                   <TD><span style={{ padding: "3px 8px", background: "#eff6ff", color: "#3b82f6", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
                   <TD>{f.module}</TD>
                   <TD>{f.is_required ? "✅" : "—"}</TD>
-                  <TD><DelBtn onClick={() => del(f.id)} /></TD>
+                  <TD><div style={{ display: "flex", gap: "6px" }}>
+                    <BtnSm onClick={() => openEdit(f)}>✏️</BtnSm>
+                    <BtnSm variant="danger" onClick={() => del(f.id)}>🗑️</BtnSm>
+                  </div></TD>
                 </TRow>
               ))}
               {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
@@ -1352,7 +1574,7 @@ function SalesFieldsTab() {
           </table>
         </div>
       )}
-      <Modal open={modal} onClose={() => setModal(false)} title="Sales maydon qo'shish">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "Maydonni tahrirlash" : "Sales maydon qo'shish"}>
         <form onSubmit={save}>
           <Field label="Nomi (name)" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="field_name" required /></Field>
           <Field label="Sarlavha (label)" required><Inp value={form.label} onChange={v => setForm(p => ({ ...p, label: v }))} placeholder="Ko'rsatma matn" required /></Field>

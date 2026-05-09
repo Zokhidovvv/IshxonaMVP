@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -37,6 +37,24 @@ def add_log(data: ProductionCreate, db: Session = Depends(get_db), user=Depends(
     db.commit()
     db.refresh(log)
     return log
+
+@router.put("/{log_id}", response_model=ProductionOut)
+def update_log(log_id: int, data: ProductionCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):
+    log = db.query(ProductionLog).filter(ProductionLog.id == log_id).first()
+    if not log:
+        raise HTTPException(404, "Yozuv topilmadi")
+    for k, v in data.model_dump().items():
+        setattr(log, k, v)
+    db.commit(); db.refresh(log)
+    return log
+
+@router.delete("/{log_id}")
+def delete_log(log_id: int, db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):
+    log = db.query(ProductionLog).filter(ProductionLog.id == log_id).first()
+    if not log:
+        raise HTTPException(404, "Yozuv topilmadi")
+    db.delete(log); db.commit()
+    return {"message": "O'chirildi"}
 
 @router.get("/today")
 def today_stats(db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):

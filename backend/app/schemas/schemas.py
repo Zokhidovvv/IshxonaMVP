@@ -23,6 +23,10 @@ class UserCreate(BaseModel):
 class RoleUpdate(BaseModel):
     role: str
 
+class UserUpdate(BaseModel):
+    role: str
+    password: Optional[str] = None
+
 class UserOut(BaseModel):
     id: int
     username: str

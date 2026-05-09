@@ -33,11 +33,20 @@ def create_material(data: MaterialCreate, db: Session = Depends(get_db), _=Depen
     db.refresh(material)
     return material
 
-@router.delete("/{material_id}")
-def delete_material(material_id: int, db: Session = Depends(get_db), _=Depends(require_role("admin"))):
+@router.put("/{material_id}", response_model=MaterialOut)
+def update_material(material_id: int, data: MaterialCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "sales", "boss"))):
     material = db.query(Material).filter(Material.id == material_id).first()
     if not material:
         raise HTTPException(404, "Material topilmadi")
-    db.delete(material)
-    db.commit()
+    for k, v in data.model_dump().items():
+        setattr(material, k, v)
+    db.commit(); db.refresh(material)
+    return material
+
+@router.delete("/{material_id}")
+def delete_material(material_id: int, db: Session = Depends(get_db), _=Depends(require_role("admin", "sales", "boss"))):
+    material = db.query(Material).filter(Material.id == material_id).first()
+    if not material:
+        raise HTTPException(404, "Material topilmadi")
+    db.delete(material); db.commit()
     return {"message": "Material o'chirildi"}

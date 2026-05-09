@@ -38,15 +38,21 @@ def create_tosh_log(
     db.refresh(log)
     return log
 
-@router.delete("/{log_id}")
-def delete_tosh_log(
-    log_id: int,
-    db: Session = Depends(get_db),
-    _=Depends(require_role("admin"))
-):
+@router.put("/{log_id}", response_model=ToshLogOut)
+def update_tosh_log(log_id: int, data: ToshLogCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "sales", "boss"))):
     log = db.query(ToshLog).filter(ToshLog.id == log_id).first()
     if not log:
         raise HTTPException(404, "Yozuv topilmadi")
-    db.delete(log)
-    db.commit()
+    d = data.model_dump(); d.pop('logged_by', None)
+    for k, v in d.items():
+        setattr(log, k, v)
+    db.commit(); db.refresh(log)
+    return log
+
+@router.delete("/{log_id}")
+def delete_tosh_log(log_id: int, db: Session = Depends(get_db), _=Depends(require_role("admin", "sales", "boss"))):
+    log = db.query(ToshLog).filter(ToshLog.id == log_id).first()
+    if not log:
+        raise HTTPException(404, "Yozuv topilmadi")
+    db.delete(log); db.commit()
     return {"message": "O'chirildi"}

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..database import get_db
 from ..models.user import User
-from ..schemas.schemas import UserCreate, UserOut, RoleUpdate
+from ..schemas.schemas import UserCreate, UserOut, RoleUpdate, UserUpdate
 from ..core.security import hash_password
 from ..core.dependencies import require_role, get_current_user
 
@@ -16,12 +16,12 @@ def get_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    _=Depends(require_role("admin"))
+    _=Depends(require_role("admin", "boss"))
 ):
     return db.query(User).offset(skip).limit(limit).all()
 
 @router.post("/", response_model=UserOut)
-def create_user(data: UserCreate, db: Session = Depends(get_db), _=Depends(require_role("admin"))):
+def create_user(data: UserCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):
     if data.role not in VALID_ROLES:
         raise HTTPException(400, "Rol noto'g'ri. admin | sales | boss bo'lishi kerak")
     if db.query(User).filter(User.username == data.username).first():
@@ -32,27 +32,25 @@ def create_user(data: UserCreate, db: Session = Depends(get_db), _=Depends(requi
     db.refresh(user)
     return user
 
-@router.put("/{user_id}/role", response_model=UserOut)
-def change_role(user_id: int, body: RoleUpdate, db: Session = Depends(get_db), current=Depends(get_current_user), _=Depends(require_role("admin"))):
+@router.put("/{user_id}", response_model=UserOut)
+def update_user(user_id: int, body: UserUpdate, db: Session = Depends(get_db), current=Depends(get_current_user), _=Depends(require_role("admin", "boss"))):
     if body.role not in VALID_ROLES:
         raise HTTPException(400, "Rol noto'g'ri. admin | sales | boss bo'lishi kerak")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(404, "Foydalanuvchi topilmadi")
-    if user.id == current.id:
-        raise HTTPException(400, "O'z rolingizni o'zgartira olmaysiz")
     user.role = body.role
-    db.commit()
-    db.refresh(user)
+    if body.password:
+        user.password_hash = hash_password(body.password)
+    db.commit(); db.refresh(user)
     return user
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current=Depends(get_current_user), _=Depends(require_role("admin"))):
+def delete_user(user_id: int, db: Session = Depends(get_db), current=Depends(get_current_user), _=Depends(require_role("admin", "boss"))):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(404, "Foydalanuvchi topilmadi")
     if user.id == current.id:
         raise HTTPException(400, "O'zingizni o'chira olmaysiz")
-    db.delete(user)
-    db.commit()
+    db.delete(user); db.commit()
     return {"message": "O'chirildi"}
