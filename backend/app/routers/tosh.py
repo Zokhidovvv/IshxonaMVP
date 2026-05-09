@@ -29,7 +29,7 @@ def get_tosh_logs(
 def create_tosh_log(
     data: ToshLogCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("admin", "sales"))
+    current_user=Depends(require_role("admin", "sales", "boss"))
 ):
     d = data.model_dump(); d.pop('logged_by', None)
     log = ToshLog(**d, logged_by=current_user.username)

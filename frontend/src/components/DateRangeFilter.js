@@ -36,7 +36,7 @@ function getActivePreset(filter) {
 
 const dateInpStyle = {
   padding: "8px 12px", borderRadius: "8px",
-  border: "1.5px solid #cbd5e1", fontSize: "14px",
+  border: "1.5px solid #cbd5e1", fontSize: "16px",
   outline: "none", color: "#1e293b", background: "#fff",
   cursor: "pointer",
 };

@@ -21,7 +21,7 @@ def get_users(
     return db.query(User).offset(skip).limit(limit).all()
 
 @router.post("/", response_model=UserOut)
-def create_user(data: UserCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "boss"))):
+def create_user(data: UserCreate, db: Session = Depends(get_db), _=Depends(require_role("boss"))):
     if data.role not in VALID_ROLES:
         raise HTTPException(400, "Rol noto'g'ri. admin | sales | boss bo'lishi kerak")
     if db.query(User).filter(User.username == data.username).first():
@@ -33,7 +33,7 @@ def create_user(data: UserCreate, db: Session = Depends(get_db), _=Depends(requi
     return user
 
 @router.put("/{user_id}", response_model=UserOut)
-def update_user(user_id: int, body: UserUpdate, db: Session = Depends(get_db), current=Depends(get_current_user), _=Depends(require_role("admin", "boss"))):
+def update_user(user_id: int, body: UserUpdate, db: Session = Depends(get_db), current=Depends(get_current_user), _=Depends(require_role("boss"))):
     if body.role not in VALID_ROLES:
         raise HTTPException(400, "Rol noto'g'ri. admin | sales | boss bo'lishi kerak")
     user = db.query(User).filter(User.id == user_id).first()
@@ -46,7 +46,7 @@ def update_user(user_id: int, body: UserUpdate, db: Session = Depends(get_db), c
     return user
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current=Depends(get_current_user), _=Depends(require_role("admin", "boss"))):
+def delete_user(user_id: int, db: Session = Depends(get_db), current=Depends(get_current_user), _=Depends(require_role("boss"))):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(404, "Foydalanuvchi topilmadi")

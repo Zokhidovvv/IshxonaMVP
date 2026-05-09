@@ -29,7 +29,7 @@ def get_ip_logs(
 def create_ip_log(
     data: IpLogCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("admin", "sales"))
+    current_user=Depends(require_role("admin", "sales", "boss"))
 ):
     d = data.model_dump(); d.pop('logged_by', None)
     log = IpLog(**d, logged_by=current_user.username)

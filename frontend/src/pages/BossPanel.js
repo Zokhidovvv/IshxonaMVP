@@ -48,7 +48,7 @@ function Inp({ value, onChange, type = "text", placeholder, required, min, step 
   return (
     <input type={type} value={value || ""} required={required} onChange={e => onChange(e.target.value)}
       placeholder={placeholder} min={min} step={step}
-      style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" }}
+      style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "16px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" }}
       onFocus={e => e.target.style.borderColor = "#2d6a4f"}
       onBlur={e => e.target.style.borderColor = "#cbd5e1"}
     />
@@ -58,7 +58,7 @@ function Inp({ value, onChange, type = "text", placeholder, required, min, step 
 function Sel({ value, onChange, children }) {
   return (
     <select value={value || ""} onChange={e => onChange(e.target.value)}
-      style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box", cursor: "pointer" }}>
+      style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "16px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box", cursor: "pointer" }}>
       {children}
     </select>
   );
@@ -151,8 +151,8 @@ function RoleBadge({ role }) {
   );
 }
 
-const dateInp = { padding: "8px 12px", borderRadius: "8px", border: "1.5px solid #cbd5e1", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", cursor: "pointer" };
-const inp = { width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" };
+const dateInp = { padding: "8px 12px", borderRadius: "8px", border: "1.5px solid #cbd5e1", fontSize: "16px", outline: "none", color: "#1e293b", background: "#fff", cursor: "pointer" };
+const inp = { width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "16px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" };
 
 function SubmitBtn({ loading, children }) {
   return (
@@ -335,7 +335,7 @@ function AdminWorkersTab() {
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>👷 Ishchilar</h2>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Qidirish..."
-            style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", minWidth: "160px", outline: "none" }} />
+            style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "16px", minWidth: "160px", outline: "none" }} />
           <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
           <BtnSm onClick={openAdd}>➕ Qo'shish</BtnSm>
         </div>
@@ -449,7 +449,7 @@ function AdminMaterialsTab() {
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>🧵 Materiallar</h2>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Qidirish..."
-            style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", minWidth: "140px", outline: "none" }} />
+            style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "16px", minWidth: "140px", outline: "none" }} />
           <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
           <BtnSm onClick={openAdd}>➕ Qo'shish</BtnSm>
         </div>

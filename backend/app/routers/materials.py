@@ -26,7 +26,7 @@ def get_materials(
     return q.order_by(Material.date.desc()).offset(skip).limit(limit).all()
 
 @router.post("/", response_model=MaterialOut)
-def create_material(data: MaterialCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "sales"))):
+def create_material(data: MaterialCreate, db: Session = Depends(get_db), _=Depends(require_role("admin", "sales", "boss"))):
     material = Material(**data.model_dump())
     db.add(material)
     db.commit()

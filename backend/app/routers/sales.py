@@ -24,7 +24,7 @@ def get_sales(
     return q.order_by(SalesLog.timestamp.desc()).all()
 
 @router.post("/", response_model=SalesOut)
-def add_sale(data: SalesCreate, db: Session = Depends(get_db), user=Depends(require_role("admin", "sales"))):
+def add_sale(data: SalesCreate, db: Session = Depends(get_db), user=Depends(require_role("admin", "sales", "boss"))):
     d = data.model_dump(); d.pop('logged_by', None)
     log = SalesLog(**d, logged_by=user.id)
     db.add(log)

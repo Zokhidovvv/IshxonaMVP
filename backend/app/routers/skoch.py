@@ -29,7 +29,7 @@ def get_skoch_logs(
 def create_skoch_log(
     data: SkochLogCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("admin", "sales"))
+    current_user=Depends(require_role("admin", "sales", "boss"))
 ):
     d = data.model_dump(); d.pop('logged_by', None)
     log = SkochLog(**d, logged_by=current_user.username)

@@ -30,7 +30,7 @@ def get_logs(
     return q.order_by(ProductionLog.date.desc()).offset(skip).limit(limit).all()
 
 @router.post("/", response_model=ProductionOut)
-def add_log(data: ProductionCreate, db: Session = Depends(get_db), user=Depends(require_role("admin"))):
+def add_log(data: ProductionCreate, db: Session = Depends(get_db), user=Depends(require_role("admin", "boss"))):
     d = data.model_dump(); d.pop('logged_by', None)
     log = ProductionLog(**d, logged_by=user.id)
     db.add(log)

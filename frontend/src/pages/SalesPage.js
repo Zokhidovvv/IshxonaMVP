@@ -38,7 +38,7 @@ function TRow({ children, idx }) {
 
 const inp = {
   width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1",
-  borderRadius: "8px", fontSize: "14px", outline: "none",
+  borderRadius: "8px", fontSize: "16px", outline: "none",
   color: "#1e293b", background: "#fff", boxSizing: "border-box"
 };
 
