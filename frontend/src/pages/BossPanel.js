@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
 import Modal from "../components/Modal";
 import { useToast } from "../components/Toast";
 import api from "../services/api";
@@ -27,6 +26,7 @@ function useIsMobile() {
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 const fmt = n => Number(n || 0).toLocaleString();
+const SKOCH_PRICES = { "40": 130000, "32": 100000, "28": 100000 };
 
 function exportXLSX(rows, cols, filename) {
   const data = [cols.map(c => c.label), ...rows.map(r => cols.map(c => r[c.key] ?? ""))];
@@ -44,10 +44,10 @@ function Spinner() {
   );
 }
 
-function Inp({ value, onChange, type = "text", placeholder, required, min }) {
+function Inp({ value, onChange, type = "text", placeholder, required, min, step }) {
   return (
     <input type={type} value={value || ""} required={required} onChange={e => onChange(e.target.value)}
-      placeholder={placeholder} min={min}
+      placeholder={placeholder} min={min} step={step}
       style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" }}
       onFocus={e => e.target.style.borderColor = "#2d6a4f"}
       onBlur={e => e.target.style.borderColor = "#cbd5e1"}
@@ -58,7 +58,7 @@ function Inp({ value, onChange, type = "text", placeholder, required, min }) {
 function Sel({ value, onChange, children }) {
   return (
     <select value={value || ""} onChange={e => onChange(e.target.value)}
-      style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" }}>
+      style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box", cursor: "pointer" }}>
       {children}
     </select>
   );
@@ -85,17 +85,17 @@ function Btn({ onClick, type = "button", style: ext, disabled, children }) {
   const variant = ext?.variant || "primary";
   return (
     <button type={type} onClick={onClick} disabled={disabled}
-      style={{ padding: "10px 18px", borderRadius: "8px", border: "none", fontWeight: 600, fontSize: "14px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, minHeight: "48px", ...variants[variant], ...ext }}>
+      style={{ padding: "10px 18px", borderRadius: "8px", border: "none", fontWeight: 600, fontSize: "14px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, minHeight: "44px", ...variants[variant], ...ext }}>
       {children}
     </button>
   );
 }
 
-function BtnSm({ onClick, variant = "primary", children }) {
+function BtnSm({ onClick, variant = "primary", children, title }) {
   const bg = { primary: "#2d6a4f", danger: "#ef4444", success: "#10b981" };
   return (
-    <button onClick={onClick}
-      style={{ padding: "8px 12px", borderRadius: "6px", border: "none", fontWeight: 600, fontSize: "13px", cursor: "pointer", background: bg[variant], color: "#fff", minHeight: "44px" }}>
+    <button onClick={onClick} title={title}
+      style={{ padding: "8px 12px", borderRadius: "6px", border: "none", fontWeight: 600, fontSize: "13px", cursor: "pointer", background: bg[variant], color: "#fff", minHeight: "40px" }}>
       {children}
     </button>
   );
@@ -144,26 +144,43 @@ function RoleBadge({ role }) {
   return (
     <span style={{
       display: "inline-block", padding: "3px 10px", borderRadius: "20px",
-      fontSize: "12px", fontWeight: 700, letterSpacing: "0.5px",
-      background: ROLE_COLORS[role] || "#64748b", color: "#fff",
-      textTransform: "uppercase"
+      fontSize: "12px", fontWeight: 700, background: ROLE_COLORS[role] || "#64748b", color: "#fff", textTransform: "uppercase"
     }}>
       {ROLE_LABELS[role] || role}
     </span>
   );
 }
 
-const dateInp = { padding: "8px 12px", borderRadius: "8px", border: "1.5px solid #cbd5e1", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff" };
+const dateInp = { padding: "8px 12px", borderRadius: "8px", border: "1.5px solid #cbd5e1", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", cursor: "pointer" };
+const inp = { width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box" };
 
-const SIDEBAR_TABS = [
-  { id: "stats", icon: "📊", label: "Statistika" },
-  { id: "workers", icon: "👷", label: "Ishchilar" },
-  { id: "materials", icon: "🧵", label: "Materiallar" },
-  { id: "production", icon: "💰", label: "Kunlik maosh" },
-  { id: "attendance", icon: "🗓", label: "Davomat" },
-  { id: "fields", icon: "📋", label: "Forma maydonlari" },
-  { id: "users", icon: "👥", label: "Foydalanuvchilar" },
-];
+function SubmitBtn({ loading, children }) {
+  return (
+    <button type="submit" disabled={loading} style={{
+      width: "100%", padding: "13px", background: loading ? "#6ee7b7" : "#2d6a4f",
+      color: "#fff", border: "none", borderRadius: "8px",
+      fontSize: "15px", fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
+      marginTop: "8px", minHeight: "48px"
+    }}>{loading ? "Saqlanmoqda..." : children}</button>
+  );
+}
+
+function TotalCard({ label, value }) {
+  return (
+    <div style={{ marginTop: "16px", padding: "14px 18px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0" }}>
+      <span style={{ fontWeight: 700, color: "#1e293b" }}>{label}: </span>
+      <span style={{ fontWeight: 800, color: "#2d6a4f", fontSize: "18px" }}>{fmt(value)} so'm</span>
+    </div>
+  );
+}
+
+function DelBtn({ onClick }) {
+  return (
+    <button onClick={onClick} style={{ padding: "8px 12px", borderRadius: "6px", border: "none", background: "#fee2e2", color: "#ef4444", cursor: "pointer", fontSize: "14px", fontWeight: 700, minHeight: "40px" }}>
+      🗑️
+    </button>
+  );
+}
 
 // ─── STATS TAB ────────────────────────────────────────────────────────────────
 
@@ -196,7 +213,6 @@ function StatsTab() {
   useEffect(() => { load(); }, []);
 
   const safeWeekly = Array.isArray(weekly) ? weekly : [];
-
   const lineData = {
     labels: safeWeekly.map(d => d.label),
     datasets: [{ label: "Maosh (so'm)", data: safeWeekly.map(d => d.production), borderColor: "#2d6a4f", backgroundColor: "rgba(45,106,79,0.1)", fill: true, tension: 0.4 }]
@@ -222,9 +238,7 @@ function StatsTab() {
           <div key={s.label} style={{ background: "#fff", borderRadius: "12px", padding: "20px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", borderTop: `4px solid ${s.color}` }}>
             <div style={{ fontSize: "28px" }}>{s.icon}</div>
             <div style={{ color: "#64748b", fontSize: "13px", marginTop: "8px" }}>{s.label}</div>
-            <div style={{ fontSize: "22px", fontWeight: 800, color: "#1e293b", marginTop: "4px" }}>
-              {fmt(s.value)}{s.suffix}
-            </div>
+            <div style={{ fontSize: "22px", fontWeight: 800, color: "#1e293b", marginTop: "4px" }}>{fmt(s.value)}{s.suffix}</div>
           </div>
         ))}
       </div>
@@ -261,12 +275,15 @@ function StatsTab() {
   );
 }
 
-// ─── WORKERS TAB (readonly for boss) ─────────────────────────────────────────
+// ─── ADMIN: WORKERS TAB ───────────────────────────────────────────────────────
 
-function WorkersTab() {
+function AdminWorkersTab() {
   const { showToast } = useToast();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ firstname: "", lastname: "", age: "", position: "" });
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState({ key: "id", dir: 1 });
 
@@ -279,19 +296,35 @@ function WorkersTab() {
 
   useEffect(() => { load(); }, []);
 
-  const toggleSort = key => setSort(p => ({ key, dir: p.key === key ? -p.dir : 1 }));
+  const openAdd = () => { setEditing(null); setForm({ firstname: "", lastname: "", age: "", position: "" }); setModal(true); };
+  const openEdit = w => { setEditing(w); setForm({ firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "" }); setModal(true); };
 
-  const filtered = list.filter(w =>
-    `${w.firstname} ${w.lastname} ${w.position || ""}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const save = async e => {
+    e.preventDefault();
+    if (!form.firstname || !form.lastname || !form.position) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
+    try {
+      const body = { firstname: form.firstname, lastname: form.lastname, age: form.age ? parseInt(form.age) : null, position: form.position };
+      if (editing) { await api.put(`/api/workers/${editing.id}`, body); showToast("Yangilandi"); }
+      else { await api.post("/api/workers", body); showToast("Qo'shildi"); }
+      setModal(false); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+  };
+
+  const del = async id => {
+    if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
+    try { await api.delete(`/api/workers/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  const toggleSort = key => setSort(p => ({ key, dir: p.key === key ? -p.dir : 1 }));
+  const filtered = list.filter(w => `${w.firstname} ${w.lastname} ${w.position || ""}`.toLowerCase().includes(search.toLowerCase()));
   const sorted = [...filtered].sort((a, b) => {
-    const va = String(a[sort.key] ?? "").toLowerCase();
-    const vb = String(b[sort.key] ?? "").toLowerCase();
+    const va = String(a[sort.key] ?? "").toLowerCase(), vb = String(b[sort.key] ?? "").toLowerCase();
     return va < vb ? -sort.dir : va > vb ? sort.dir : 0;
   });
 
   const doExport = () => exportXLSX(
-    list.map(w => ({ id: w.id, firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "" })),
+    sorted.map(w => ({ id: w.id, firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "" })),
     [{ key: "id", label: "ID" }, { key: "firstname", label: "Ism" }, { key: "lastname", label: "Familiya" }, { key: "age", label: "Yosh" }, { key: "position", label: "Lavozim" }],
     "ishchilar.xlsx"
   );
@@ -300,50 +333,67 @@ function WorkersTab() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>👷 Ishchilar</h2>
-        <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Qidirish..."
+            style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", minWidth: "160px", outline: "none" }} />
+          <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
+          <BtnSm onClick={openAdd}>➕ Qo'shish</BtnSm>
+        </div>
       </div>
-      <input
-        value={search} onChange={e => setSearch(e.target.value)}
-        placeholder="Qidirish: ism, familiya, lavozim..."
-        style={{ width: "100%", padding: "10px 14px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", outline: "none", color: "#1e293b", background: "#fff", boxSizing: "border-box", marginBottom: "14px" }}
-        onFocus={e => e.target.style.borderColor = "#2d6a4f"}
-        onBlur={e => e.target.style.borderColor = "#cbd5e1"}
-      />
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <SortTH sortKey="id" sort={sort} onSort={toggleSort}>ID</SortTH>
-                <SortTH sortKey="firstname" sort={sort} onSort={toggleSort}>Ism</SortTH>
-                <SortTH sortKey="lastname" sort={sort} onSort={toggleSort}>Familiya</SortTH>
-                <SortTH sortKey="age" sort={sort} onSort={toggleSort}>Yosh</SortTH>
-                <SortTH sortKey="position" sort={sort} onSort={toggleSort}>Lavozim</SortTH>
-              </tr>
-            </thead>
+            <thead><tr>
+              <SortTH sortKey="id" sort={sort} onSort={toggleSort}>ID</SortTH>
+              <SortTH sortKey="firstname" sort={sort} onSort={toggleSort}>Ism</SortTH>
+              <SortTH sortKey="lastname" sort={sort} onSort={toggleSort}>Familiya</SortTH>
+              <SortTH sortKey="age" sort={sort} onSort={toggleSort}>Yosh</SortTH>
+              <SortTH sortKey="position" sort={sort} onSort={toggleSort}>Lavozim</SortTH>
+              <TH>Amallar</TH>
+            </tr></thead>
             <tbody>
               {sorted.map((w, i) => (
                 <TRow key={w.id} idx={i}>
                   <TD>{w.id}</TD><TD>{w.firstname}</TD><TD>{w.lastname}</TD>
                   <TD>{w.age || "—"}</TD><TD>{w.position || "—"}</TD>
+                  <TD><div style={{ display: "flex", gap: "6px" }}>
+                    <BtnSm onClick={() => openEdit(w)}>✏️</BtnSm>
+                    <BtnSm variant="danger" onClick={() => del(w.id)}>🗑️</BtnSm>
+                  </div></TD>
                 </TRow>
               ))}
-              {!sorted.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+              {!sorted.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>{search ? "Topilmadi" : "Ma'lumot yo'q"}</td></tr>}
             </tbody>
           </table>
         </div>
       )}
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "Ishchini tahrirlash" : "Ishchi qo'shish"}>
+        <form onSubmit={save}>
+          <Field label="Ism" required><Inp value={form.firstname} onChange={v => setForm(p => ({ ...p, firstname: v }))} placeholder="Ism" required /></Field>
+          <Field label="Familiya" required><Inp value={form.lastname} onChange={v => setForm(p => ({ ...p, lastname: v }))} placeholder="Familiya" required /></Field>
+          <Field label="Yosh"><Inp type="number" value={form.age} onChange={v => setForm(p => ({ ...p, age: v }))} placeholder="Yosh" min="14" /></Field>
+          <Field label="Lavozim" required><Inp value={form.position} onChange={v => setForm(p => ({ ...p, position: v }))} placeholder="Lavozim" required /></Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
 
-// ─── MATERIALS TAB ────────────────────────────────────────────────────────────
+// ─── ADMIN: MATERIALS TAB ─────────────────────────────────────────────────────
 
-function MaterialsTab() {
+function AdminMaterialsTab() {
   const { showToast } = useToast();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(false);
   const [filter, setFilter] = useState({ start: "", end: "" });
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState({ key: "date", dir: -1 });
+  const [form, setForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() });
 
   const load = async () => {
     setLoading(true);
@@ -353,50 +403,101 @@ function MaterialsTab() {
       if (filter.end) params.end = filter.end;
       const r = await api.get("/api/materials", { params });
       setList(Array.isArray(r.data) ? r.data : []);
-    } catch { showToast("Materiallarni olishda xato", "error"); }
+    } catch { showToast("Xato", "error"); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, [filter]);
 
+  const save = async e => {
+    e.preventDefault();
+    if (!form.name || !form.quantity_rolls || !form.length_meters) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
+    try {
+      await api.post("/api/materials", { name: form.name, quantity_rolls: parseInt(form.quantity_rolls), length_meters: parseFloat(form.length_meters), date: form.date });
+      showToast("Qo'shildi"); setModal(false);
+      setForm({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() }); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+  };
+
+  const del = async id => {
+    if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
+    try { await api.delete(`/api/materials/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  const toggleSort = key => setSort(p => ({ key, dir: p.key === key ? -p.dir : 1 }));
+  const filtered = list.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+  const sorted = [...filtered].sort((a, b) => {
+    const va = String(a[sort.key] || "").toLowerCase(), vb = String(b[sort.key] || "").toLowerCase();
+    return va < vb ? -sort.dir : va > vb ? sort.dir : 0;
+  });
+
   const doExport = () => exportXLSX(
-    list.map(m => ({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date })),
+    sorted.map(m => ({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date })),
     [{ key: "name", label: "Nomi" }, { key: "quantity_rolls", label: "Rulon soni" }, { key: "length_meters", label: "Uzunlik (m)" }, { key: "date", label: "Sana" }],
     "materiallar.xlsx"
   );
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>🧵 Materiallar</h2>
-        <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Qidirish..."
+            style={{ padding: "8px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", minWidth: "140px", outline: "none" }} />
+          <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
+          <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+        </div>
       </div>
       <DateRangeFilter filter={filter} onChange={setFilter} />
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>Nomi</TH><TH>Rulon soni</TH><TH>Uzunlik (m)</TH><TH>Sana</TH></tr></thead>
+            <thead><tr>
+              <SortTH sortKey="name" sort={sort} onSort={toggleSort}>Nomi</SortTH>
+              <SortTH sortKey="quantity_rolls" sort={sort} onSort={toggleSort}>Rulon soni</SortTH>
+              <SortTH sortKey="length_meters" sort={sort} onSort={toggleSort}>Uzunlik (m)</SortTH>
+              <SortTH sortKey="date" sort={sort} onSort={toggleSort}>Sana</SortTH>
+              <TH>Amallar</TH>
+            </tr></thead>
             <tbody>
-              {list.map((m, i) => (
-                <TRow key={m.id} idx={i}><TD>{m.name}</TD><TD>{m.quantity_rolls}</TD><TD>{m.length_meters}</TD><TD>{m.date}</TD></TRow>
+              {sorted.map((m, i) => (
+                <TRow key={m.id} idx={i}>
+                  <TD>{m.name}</TD><TD>{m.quantity_rolls}</TD><TD>{m.length_meters}</TD><TD>{m.date}</TD>
+                  <TD><BtnSm variant="danger" onClick={() => del(m.id)}>🗑️</BtnSm></TD>
+                </TRow>
               ))}
-              {!list.length && <tr><td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+              {!sorted.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>{search ? "Topilmadi" : "Ma'lumot yo'q"}</td></tr>}
             </tbody>
           </table>
         </div>
       )}
+      <Modal open={modal} onClose={() => setModal(false)} title="Material qo'shish">
+        <form onSubmit={save}>
+          <Field label="Nomi" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Material nomi" required /></Field>
+          <Field label="Rulon soni" required><Inp type="number" value={form.quantity_rolls} onChange={v => setForm(p => ({ ...p, quantity_rolls: v }))} placeholder="Rulon soni" required min="1" /></Field>
+          <Field label="Uzunlik (m)" required><Inp type="number" value={form.length_meters} onChange={v => setForm(p => ({ ...p, length_meters: v }))} placeholder="Metrlarda" required min="0" step="0.1" /></Field>
+          <Field label="Sana" required><Inp type="date" value={form.date} onChange={v => setForm(p => ({ ...p, date: v }))} required /></Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
 
-// ─── PRODUCTION TAB ───────────────────────────────────────────────────────────
+// ─── ADMIN: PRODUCTION TAB ────────────────────────────────────────────────────
 
-function ProductionTab() {
+function AdminProductionTab() {
   const { showToast } = useToast();
   const [list, setList] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(false);
   const [filter, setFilter] = useState({ worker_id: "", start: "", end: "" });
+  const [form, setForm] = useState({ worker_id: "", daily_salary: "", date: todayStr() });
 
   const load = async () => {
     setLoading(true);
@@ -408,6 +509,7 @@ function ProductionTab() {
       const [logs, ws] = await Promise.all([api.get("/api/production", { params }), api.get("/api/workers")]);
       setList(Array.isArray(logs.data) ? logs.data : []);
       setWorkers(Array.isArray(ws.data) ? ws.data : []);
+      if (!form.worker_id && ws.data.length) setForm(p => ({ ...p, worker_id: ws.data[0].id }));
     } catch { showToast("Xato", "error"); }
     finally { setLoading(false); }
   };
@@ -417,6 +519,16 @@ function ProductionTab() {
   const workerName = id => { const w = workers.find(w => w.id === id); return w ? `${w.firstname} ${w.lastname}` : "—"; };
   const total = list.reduce((s, l) => s + Number(l.daily_salary || 0), 0);
 
+  const save = async e => {
+    e.preventDefault();
+    if (!form.worker_id || !form.daily_salary || !form.date) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
+    try {
+      await api.post("/api/production", { worker_id: parseInt(form.worker_id), daily_salary: parseFloat(form.daily_salary), date: form.date });
+      showToast("Maosh kiritildi"); setModal(false);
+      setForm(p => ({ ...p, daily_salary: "" })); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+  };
+
   const doExport = () => exportXLSX(
     list.map(l => ({ worker: workerName(l.worker_id), daily_salary: l.daily_salary, date: l.date })),
     [{ key: "worker", label: "Ishchi" }, { key: "daily_salary", label: "Maosh (so'm)" }, { key: "date", label: "Sana" }],
@@ -425,9 +537,12 @@ function ProductionTab() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>💰 Kunlik maosh</h2>
-        <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
+          <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+        </div>
       </div>
       <div style={{ marginBottom: "10px" }}>
         <select value={filter.worker_id} onChange={e => setFilter(p => ({ ...p, worker_id: e.target.value }))} style={{ ...dateInp, minWidth: "180px" }}>
@@ -455,30 +570,51 @@ function ProductionTab() {
           </div>
           {list.length > 0 && (
             <div style={{ marginTop: "16px", padding: "16px 20px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0" }}>
-              <span style={{ fontWeight: 700, color: "#1e293b" }}>Jami: </span>
+              <span style={{ fontWeight: 700, color: "#14532d" }}>Jami maosh: </span>
               <span style={{ fontWeight: 800, color: "#2d6a4f", fontSize: "18px" }}>{fmt(total)} so'm</span>
             </div>
           )}
         </>
       )}
+      <Modal open={modal} onClose={() => setModal(false)} title="Maosh kiritish">
+        <form onSubmit={save}>
+          <Field label="Ishchi" required>
+            <Sel value={form.worker_id} onChange={v => setForm(p => ({ ...p, worker_id: v }))}>
+              <option value="">Tanlang...</option>
+              {workers.map(w => <option key={w.id} value={w.id}>{w.firstname} {w.lastname}</option>)}
+            </Sel>
+          </Field>
+          <Field label="Maosh (so'm)" required><Inp type="number" value={form.daily_salary} onChange={v => setForm(p => ({ ...p, daily_salary: v }))} placeholder="0" required min="0" /></Field>
+          <Field label="Sana" required><Inp type="date" value={form.date} onChange={v => setForm(p => ({ ...p, date: v }))} required /></Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
 
-// ─── ATTENDANCE TAB ───────────────────────────────────────────────────────────
+// ─── ADMIN: ATTENDANCE TAB ────────────────────────────────────────────────────
 
 const STATUSES = [
-  { value: "keldi", label: "✅ Keldi" }, { value: "kelmadi", label: "❌ Kelmadi" },
-  { value: "yarim_kun", label: "🕐 Yarim kun" }, { value: "kasal", label: "🤒 Kasal" },
-  { value: "tatil", label: "🏖 Ta'til" },
+  { value: "keldi", label: "✅ Keldi", color: "#10b981" },
+  { value: "kelmadi", label: "❌ Kelmadi", color: "#ef4444" },
+  { value: "yarim_kun", label: "🕐 Yarim kun", color: "#f59e0b" },
+  { value: "kasal", label: "🤒 Kasal", color: "#d97706" },
+  { value: "tatil", label: "🏖 Ta'til", color: "#3b82f6" },
 ];
 
-function AttendanceTab() {
+function AdminAttendanceTab() {
   const { showToast } = useToast();
+  const isMobile = useIsMobile();
   const [date, setDate] = useState(todayStr());
   const [workers, setWorkers] = useState([]);
   const [attMap, setAttMap] = useState({});
+  const [noteMap, setNoteMap] = useState({});
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState([]);
   const [statsMonth, setStatsMonth] = useState(todayStr().slice(0, 7));
 
@@ -487,9 +623,9 @@ function AttendanceTab() {
     try {
       const [ws, att] = await Promise.all([api.get("/api/workers"), api.get("/api/attendance", { params: { date } })]);
       setWorkers(Array.isArray(ws.data) ? ws.data : []);
-      const map = {};
-      (Array.isArray(att.data) ? att.data : []).forEach(a => { map[a.worker_id] = a.status; });
-      setAttMap(map);
+      const map = {}, notes = {};
+      (Array.isArray(att.data) ? att.data : []).forEach(a => { map[a.worker_id] = a.status; notes[a.worker_id] = a.note || ""; });
+      setAttMap(map); setNoteMap(notes);
     } catch { showToast("Xato", "error"); }
     finally { setLoading(false); }
   };
@@ -499,34 +635,55 @@ function AttendanceTab() {
     api.get("/api/attendance/stats", { params: { month: statsMonth } }).then(r => setStats(Array.isArray(r.data) ? r.data : [])).catch(() => {});
   }, [statsMonth]);
 
+  const saveAll = async () => {
+    const items = workers.map(w => ({ worker_id: w.id, date, status: attMap[w.id] || "keldi", note: noteMap[w.id] || null }));
+    setSaving(true);
+    try { await api.post("/api/attendance/bulk", items); showToast("Davomat saqlandi"); }
+    catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+    finally { setSaving(false); }
+  };
+
   const doExport = () => exportXLSX(
     stats.map(s => ({ name: s.name, keldi: s.keldi, kelmadi: s.kelmadi, yarim_kun: s.yarim_kun, kasal: s.kasal, tatil: s.tatil, jami: s.jami })),
     [{ key: "name", label: "Ism" }, { key: "keldi", label: "Keldi" }, { key: "kelmadi", label: "Kelmadi" }, { key: "yarim_kun", label: "Yarim kun" }, { key: "kasal", label: "Kasal" }, { key: "tatil", label: "Ta'til" }, { key: "jami", label: "Jami" }],
-    "davomat_statistika.xlsx"
+    "davomat.xlsx"
   );
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>🗓 Davomat</h2>
-        <input type="date" value={date} onChange={e => setDate(e.target.value)} style={dateInp} />
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} style={dateInp} />
+          <Btn onClick={saveAll} disabled={saving}>{saving ? "Saqlanmoqda..." : "💾 Saqlash"}</Btn>
+        </div>
       </div>
       {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "28px" }}>
+        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "32px" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>Ism</TH><TH>Familiya</TH><TH>Status</TH></tr></thead>
+            <thead><tr><TH>Ism</TH><TH>Familiya</TH><TH>Status</TH>{!isMobile && <TH>Izoh</TH>}</tr></thead>
             <tbody>
-              {workers.map((w, i) => (
-                <TRow key={w.id} idx={i}>
-                  <TD>{w.firstname}</TD><TD>{w.lastname}</TD>
-                  <TD>
-                    <span style={{ fontSize: "14px", fontWeight: 600 }}>
-                      {STATUSES.find(s => s.value === (attMap[w.id] || "keldi"))?.label || "—"}
-                    </span>
-                  </TD>
-                </TRow>
-              ))}
-              {!workers.length && <tr><td colSpan={3} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ishchilar yo'q</td></tr>}
+              {workers.map((w, i) => {
+                const status = attMap[w.id] || "keldi";
+                return (
+                  <TRow key={w.id} idx={i}>
+                    <TD>{w.firstname}</TD><TD>{w.lastname}</TD>
+                    <TD>
+                      <select value={status} onChange={e => setAttMap(p => ({ ...p, [w.id]: e.target.value }))}
+                        style={{ padding: "8px 10px", borderRadius: "6px", border: "1.5px solid #e2e8f0", fontSize: "13px", background: "#fff", cursor: "pointer", minHeight: "40px" }}>
+                        {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      </select>
+                    </TD>
+                    {!isMobile && (
+                      <TD>
+                        <input type="text" value={noteMap[w.id] || ""} onChange={e => setNoteMap(p => ({ ...p, [w.id]: e.target.value }))}
+                          placeholder="Izoh..." style={{ padding: "8px 10px", borderRadius: "6px", border: "1px solid #e2e8f0", fontSize: "13px", background: "#fff", width: "150px", minHeight: "40px" }} />
+                      </TD>
+                    )}
+                  </TRow>
+                );
+              })}
+              {!workers.length && <tr><td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ishchilar yo'q</td></tr>}
             </tbody>
           </table>
         </div>
@@ -534,7 +691,7 @@ function AttendanceTab() {
       <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", flexWrap: "wrap" }}>
         <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>📅 Oylik statistika</h3>
         <input type="month" value={statsMonth} onChange={e => setStatsMonth(e.target.value)} style={dateInp} />
-        {stats.length > 0 && <Btn style={{ variant: "success" }} onClick={doExport}>📥 Excel</Btn>}
+        {stats.length > 0 && <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>}
       </div>
       {stats.length > 0 && (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
@@ -560,143 +717,16 @@ function AttendanceTab() {
   );
 }
 
-// ─── FIELDS TAB (Boss: ko'rish + CRUD, admin va sales panelidagi maydonlar) ───
+// ─── ADMIN: USERS TAB ─────────────────────────────────────────────────────────
 
-const PANEL_TABS = [
-  { id: "admin", label: "📋 Admin maydonlari" },
-  { id: "sales", label: "💰 Sales maydonlari" },
-];
+const ROLES = [{ value: "admin", label: "Admin" }, { value: "boss", label: "Boss" }, { value: "sales", label: "Sales" }];
 
-function FieldsTab() {
-  const { showToast } = useToast();
-  const [panelView, setPanelView] = useState("admin");
-  const [list, setList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "" });
-
-  const load = async () => {
-    setLoading(true);
-    try { const r = await api.get("/api/fields", { params: { panel: panelView } }); setList(Array.isArray(r.data) ? r.data : []); }
-    catch { showToast("Maydonlarni olishda xato", "error"); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(); }, [panelView]);
-
-  const openAdd = () => {
-    setForm({ name: "", label: "", field_type: "text", options: "", is_required: false, module: panelView === "admin" ? "production" : "sales" });
-    setModal(true);
-  };
-
-  const save = async e => {
-    e.preventDefault();
-    if (!form.name || !form.label) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
-    try {
-      await api.post("/api/fields", { ...form, panel: panelView });
-      showToast("Maydon qo'shildi");
-      setModal(false); load();
-    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
-  };
-
-  const del = async id => {
-    if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
-    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi"); load(); }
-    catch { showToast("Xato", "error"); }
-  };
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari</h2>
-        <Btn onClick={openAdd}>➕ Qo'shish</Btn>
-      </div>
-
-      {/* Panel toggle */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-        {PANEL_TABS.map(pt => {
-          const on = panelView === pt.id;
-          return (
-            <button key={pt.id} onClick={() => setPanelView(pt.id)} style={{
-              padding: "8px 18px", borderRadius: "8px", cursor: "pointer", minHeight: "40px",
-              border: `1.5px solid ${on ? "#1e3a5f" : "#cbd5e1"}`,
-              background: on ? "#1e3a5f" : "#fff",
-              color: on ? "#fff" : "#64748b",
-              fontWeight: on ? 700 : 400, fontSize: "14px",
-            }}>{pt.label}</button>
-          );
-        })}
-      </div>
-
-      {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH></TH></tr></thead>
-            <tbody>
-              {list.map((f, i) => (
-                <TRow key={f.id} idx={i}>
-                  <TD>{f.name}</TD>
-                  <TD>{f.label}</TD>
-                  <TD><span style={{ padding: "3px 8px", background: "#f0fdf4", color: "#2d6a4f", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
-                  <TD>{f.module}</TD>
-                  <TD>{f.is_required ? "✅" : "—"}</TD>
-                  <TD>
-                    <button onClick={() => del(f.id)} style={{ padding: "6px 12px", borderRadius: "6px", border: "none", background: "#fee2e2", color: "#ef4444", cursor: "pointer", fontWeight: 700, minHeight: "36px" }}>🗑️</button>
-                  </TD>
-                </TRow>
-              ))}
-              {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {modal && (
-        <Modal title={`${panelView === "admin" ? "Admin" : "Sales"} maydon qo'shish`} onClose={() => setModal(false)}>
-          <form onSubmit={save}>
-            <Field label="Nomi (name)" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="field_name" required /></Field>
-            <Field label="Sarlavha (label)" required><Inp value={form.label} onChange={v => setForm(p => ({ ...p, label: v }))} placeholder="Ko'rsatma matn" required /></Field>
-            <Field label="Turi">
-              <Sel value={form.field_type} onChange={v => setForm(p => ({ ...p, field_type: v }))}>
-                <option value="text">Matn</option>
-                <option value="number">Raqam</option>
-                <option value="select">Tanlash</option>
-                <option value="date">Sana</option>
-              </Sel>
-            </Field>
-            {form.field_type === "select" && (
-              <Field label="Variantlar (vergul bilan)"><Inp value={form.options} onChange={v => setForm(p => ({ ...p, options: v }))} placeholder="variant1,variant2" /></Field>
-            )}
-            <Field label="Modul"><Inp value={form.module} onChange={v => setForm(p => ({ ...p, module: v }))} placeholder="production, sales..." /></Field>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginBottom: "16px" }}>
-              <input type="checkbox" checked={form.is_required} onChange={e => setForm(p => ({ ...p, is_required: e.target.checked }))} />
-              <span style={{ fontSize: "14px", color: "#1e293b" }}>Majburiy maydon</span>
-            </label>
-            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
-              <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
-              <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
-            </div>
-          </form>
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-// ─── USERS TAB ────────────────────────────────────────────────────────────────
-
-const ROLES = [
-  { value: "admin", label: "Admin" },
-  { value: "boss", label: "Boss" },
-  { value: "sales", label: "Sales" },
-];
-
-function UsersTab() {
+function AdminUsersTab() {
   const { showToast } = useToast();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ username: "", password: "", role: "sales" });
 
   const load = async () => {
@@ -716,14 +746,13 @@ function UsersTab() {
       await api.post("/api/users", form);
       showToast("Foydalanuvchi qo'shildi");
       setForm({ username: "", password: "", role: "sales" });
-      setShowModal(false);
-      load();
+      setModal(false); load();
     } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
     finally { setSaving(false); }
   };
 
   const del = async id => {
-    if (!window.confirm("Foydalanuvchini o'chirishni tasdiqlaysizmi?")) return;
+    if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
     try { await api.delete(`/api/users/${id}`); showToast("O'chirildi"); load(); }
     catch { showToast("Xato", "error"); }
   };
@@ -740,10 +769,9 @@ function UsersTab() {
         <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>👥 Foydalanuvchilar</h2>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>
-          <BtnSm onClick={() => setShowModal(true)}>➕ Qo'shish</BtnSm>
+          <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
         </div>
       </div>
-
       {loading ? <Spinner /> : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -754,11 +782,7 @@ function UsersTab() {
                   <TD>{u.id}</TD>
                   <TD><span style={{ fontWeight: 600 }}>{u.username}</span></TD>
                   <TD><RoleBadge role={u.role} /></TD>
-                  <TD>
-                    <button onClick={() => del(u.id)} style={{ padding: "6px 12px", borderRadius: "6px", border: "none", background: "#fee2e2", color: "#ef4444", cursor: "pointer", fontSize: "14px", fontWeight: 700, minHeight: "36px" }}>
-                      🗑️
-                    </button>
-                  </TD>
+                  <TD><DelBtn onClick={() => del(u.id)} /></TD>
                 </TRow>
               ))}
               {!list.length && <tr><td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Foydalanuvchilar yo'q</td></tr>}
@@ -766,63 +790,733 @@ function UsersTab() {
           </table>
         </div>
       )}
-
-      {showModal && (
-        <Modal title="Yangi foydalanuvchi" onClose={() => setShowModal(false)}>
-          <form onSubmit={save}>
-            <Field label="Login" required>
-              <Inp value={form.username} onChange={v => setForm(p => ({ ...p, username: v }))} placeholder="foydalanuvchi nomi" required />
-            </Field>
-            <Field label="Parol" required>
-              <Inp type="password" value={form.password} onChange={v => setForm(p => ({ ...p, password: v }))} placeholder="••••••••" required />
-            </Field>
-            <Field label="Rol" required>
-              <Sel value={form.role} onChange={v => setForm(p => ({ ...p, role: v }))}>
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </Sel>
-            </Field>
-            <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
-              <Btn type="submit" disabled={saving} style={{ flex: 1, variant: "primary" }}>
-                {saving ? "Saqlanmoqda..." : "➕ Qo'shish"}
-              </Btn>
-              <Btn onClick={() => setShowModal(false)} style={{ variant: "muted" }}>Bekor</Btn>
-            </div>
-          </form>
-        </Modal>
-      )}
+      <Modal open={modal} onClose={() => setModal(false)} title="Yangi foydalanuvchi">
+        <form onSubmit={save}>
+          <Field label="Login" required><Inp value={form.username} onChange={v => setForm(p => ({ ...p, username: v }))} placeholder="foydalanuvchi nomi" required /></Field>
+          <Field label="Parol" required><Inp type="password" value={form.password} onChange={v => setForm(p => ({ ...p, password: v }))} placeholder="••••••••" required /></Field>
+          <Field label="Rol" required>
+            <Sel value={form.role} onChange={v => setForm(p => ({ ...p, role: v }))}>
+              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </Sel>
+          </Field>
+          <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+            <Btn type="submit" disabled={saving} style={{ flex: 1 }}>{saving ? "Saqlanmoqda..." : "➕ Qo'shish"}</Btn>
+            <Btn onClick={() => setModal(false)} style={{ variant: "muted" }}>Bekor</Btn>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
 
+// ─── ADMIN: FIELDS TAB ────────────────────────────────────────────────────────
+
+function AdminFieldsTab() {
+  const { showToast } = useToast();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "production" });
+
+  const load = async () => {
+    setLoading(true);
+    try { const r = await api.get("/api/fields", { params: { panel: "admin" } }); setList(Array.isArray(r.data) ? r.data : []); }
+    catch { showToast("Xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const save = async e => {
+    e.preventDefault();
+    if (!form.name || !form.label) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
+    try {
+      await api.post("/api/fields", { ...form, panel: "admin" });
+      showToast("Maydon qo'shildi"); setModal(false);
+      setForm({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "production" }); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+  };
+
+  const del = async id => {
+    if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
+    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari (Admin)</h2>
+        <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+      </div>
+      {loading ? <Spinner /> : (
+        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH></TH></tr></thead>
+            <tbody>
+              {list.map((f, i) => (
+                <TRow key={f.id} idx={i}>
+                  <TD>{f.name}</TD><TD>{f.label}</TD>
+                  <TD><span style={{ padding: "3px 8px", background: "#f0fdf4", color: "#2d6a4f", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
+                  <TD>{f.module}</TD>
+                  <TD>{f.is_required ? "✅" : "—"}</TD>
+                  <TD><DelBtn onClick={() => del(f.id)} /></TD>
+                </TRow>
+              ))}
+              {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <Modal open={modal} onClose={() => setModal(false)} title="Admin maydon qo'shish">
+        <form onSubmit={save}>
+          <Field label="Nomi (name)" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="field_name" required /></Field>
+          <Field label="Sarlavha (label)" required><Inp value={form.label} onChange={v => setForm(p => ({ ...p, label: v }))} placeholder="Ko'rsatma matn" required /></Field>
+          <Field label="Turi">
+            <Sel value={form.field_type} onChange={v => setForm(p => ({ ...p, field_type: v }))}>
+              <option value="text">Matn</option><option value="number">Raqam</option>
+              <option value="select">Tanlash</option><option value="date">Sana</option>
+            </Sel>
+          </Field>
+          {form.field_type === "select" && (
+            <Field label="Variantlar (vergul bilan)"><Inp value={form.options} onChange={v => setForm(p => ({ ...p, options: v }))} placeholder="variant1,variant2" /></Field>
+          )}
+          <Field label="Modul">
+            <Sel value={form.module} onChange={v => setForm(p => ({ ...p, module: v }))}>
+              <option value="production">Ishlab chiqarish</option>
+              <option value="workers">Ishchilar</option>
+              <option value="materials">Materiallar</option>
+              <option value="attendance">Davomat</option>
+            </Sel>
+          </Field>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginBottom: "16px" }}>
+            <input type="checkbox" checked={form.is_required} onChange={e => setForm(p => ({ ...p, is_required: e.target.checked }))} />
+            <span style={{ fontSize: "14px", color: "#1e293b" }}>Majburiy maydon</span>
+          </label>
+          <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+// ─── SALES: IP TAB ────────────────────────────────────────────────────────────
+
+function SalesIpTab() {
+  const { showToast } = useToast();
+  const isMobile = useIsMobile();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
+  const [form, setForm] = useState({ soni: "", narxi: "", date: todayStr() });
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (filter.start) params.start = filter.start;
+      if (filter.end) params.end = filter.end;
+      const r = await api.get("/api/ip", { params });
+      setList(Array.isArray(r.data) ? r.data : []);
+    } catch { showToast("Xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, [filter]);
+
+  const save = async e => {
+    e.preventDefault();
+    if (!form.soni || !form.narxi || !form.date) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
+    setSaving(true);
+    try {
+      await api.post("/api/ip", { soni: parseInt(form.soni), narxi: parseFloat(form.narxi), date: form.date });
+      showToast("Ip kiritildi"); setForm(p => ({ ...p, soni: "", narxi: "" })); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+    finally { setSaving(false); }
+  };
+
+  const del = async id => {
+    try { await api.delete(`/api/ip/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 3fr", gap: "24px" }}>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>🪡 Ip kiritish</h3>
+        <form onSubmit={save}>
+          <Field label="Soni (pachka)" required>
+            <input type="number" value={form.soni} onChange={e => setForm(p => ({ ...p, soni: e.target.value }))} placeholder="0" style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Narxi (so'm)" required>
+            <input type="number" value={form.narxi} onChange={e => setForm(p => ({ ...p, narxi: e.target.value }))} placeholder="0" style={inp} min="0" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          {form.soni && form.narxi && (
+            <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "12px", fontSize: "14px", color: "#065f46", fontWeight: 600 }}>
+              Jami: {fmt(Number(form.soni) * Number(form.narxi))} so'm
+            </div>
+          )}
+          <SubmitBtn loading={saving}>➕ Qo'shish</SubmitBtn>
+        </form>
+      </div>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
+        <DateRangeFilter filter={filter} onChange={setFilter} />
+        {loading ? <Spinner /> : (
+          <>
+            <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <tbody>
+                  {list.map((l, i) => (
+                    <TRow key={l.id} idx={i}>
+                      <TD>{l.soni} pachka</TD><TD>{fmt(l.narxi)} so'm</TD>
+                      <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
+                      <TD>{l.date}</TD><TD><DelBtn onClick={() => del(l.id)} /></TD>
+                    </TRow>
+                  ))}
+                  {!list.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            {list.length > 0 && <TotalCard label="Jami" value={total} />}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SALES: SKOCH TAB ─────────────────────────────────────────────────────────
+
+function SalesSkochTab() {
+  const { showToast } = useToast();
+  const isMobile = useIsMobile();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
+  const [form, setForm] = useState({ razmer: "40", soni: "", date: todayStr() });
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (filter.start) params.start = filter.start;
+      if (filter.end) params.end = filter.end;
+      const r = await api.get("/api/skoch", { params });
+      setList(Array.isArray(r.data) ? r.data : []);
+    } catch { showToast("Xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, [filter]);
+
+  const save = async e => {
+    e.preventDefault();
+    if (!form.soni) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
+    const narxi = SKOCH_PRICES[form.razmer];
+    setSaving(true);
+    try {
+      await api.post("/api/skoch", { razmer: form.razmer, soni: parseInt(form.soni), narxi, date: form.date });
+      showToast("Skoch kiritildi"); setForm(p => ({ ...p, soni: "" })); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+    finally { setSaving(false); }
+  };
+
+  const del = async id => {
+    try { await api.delete(`/api/skoch/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
+  const autoNarxi = SKOCH_PRICES[form.razmer];
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 3fr", gap: "24px" }}>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>📦 Skoch kiritish</h3>
+        <form onSubmit={save}>
+          <Field label="Razmer" required>
+            <select value={form.razmer} onChange={e => setForm(p => ({ ...p, razmer: e.target.value }))} style={inp}>
+              <option value="40">40 mm</option><option value="32">32 mm</option><option value="28">28 mm</option>
+            </select>
+          </Field>
+          <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "14px", fontSize: "14px", color: "#1e3a5f" }}>
+            💡 Narxi: <strong>{fmt(autoNarxi)} so'm</strong> (avtomatik)
+          </div>
+          <Field label="Soni (dona)" required>
+            <input type="number" value={form.soni} onChange={e => setForm(p => ({ ...p, soni: e.target.value }))} placeholder="0" style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          {form.soni && (
+            <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "12px", fontSize: "14px", color: "#065f46", fontWeight: 600 }}>
+              Jami: {fmt(Number(form.soni) * autoNarxi)} so'm
+            </div>
+          )}
+          <SubmitBtn loading={saving}>➕ Qo'shish</SubmitBtn>
+        </form>
+      </div>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
+        <DateRangeFilter filter={filter} onChange={setFilter} />
+        {loading ? <Spinner /> : (
+          <>
+            <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr><TH>Razmer</TH><TH>Narxi</TH><TH>Soni</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <tbody>
+                  {list.map((l, i) => (
+                    <TRow key={l.id} idx={i}>
+                      <TD>{l.razmer} mm</TD><TD>{fmt(l.narxi)} so'm</TD><TD>{l.soni} dona</TD>
+                      <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
+                      <TD>{l.date}</TD><TD><DelBtn onClick={() => del(l.id)} /></TD>
+                    </TRow>
+                  ))}
+                  {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            {list.length > 0 && <TotalCard label="Jami" value={total} />}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SALES: MATERIAL TAB ──────────────────────────────────────────────────────
+
+function SalesMaterialTab() {
+  const { showToast } = useToast();
+  const isMobile = useIsMobile();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
+  const [form, setForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() });
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (filter.start) params.start = filter.start;
+      if (filter.end) params.end = filter.end;
+      const r = await api.get("/api/materials", { params });
+      setList(Array.isArray(r.data) ? r.data : []);
+    } catch { showToast("Xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, [filter]);
+
+  const save = async e => {
+    e.preventDefault();
+    if (!form.name || !form.quantity_rolls || !form.length_meters) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
+    setSaving(true);
+    try {
+      await api.post("/api/materials", { name: form.name, quantity_rolls: parseInt(form.quantity_rolls), length_meters: parseFloat(form.length_meters), date: form.date });
+      showToast("Material kiritildi");
+      setForm({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() }); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+    finally { setSaving(false); }
+  };
+
+  const del = async id => {
+    try { await api.delete(`/api/materials/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 3fr", gap: "24px" }}>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>🧵 Material kiritish</h3>
+        <form onSubmit={save}>
+          <Field label="Nomi" required>
+            <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Material nomi" style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Rulon soni" required>
+            <input type="number" value={form.quantity_rolls} onChange={e => setForm(p => ({ ...p, quantity_rolls: e.target.value }))} placeholder="0" style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Uzunlik (m)" required>
+            <input type="number" value={form.length_meters} onChange={e => setForm(p => ({ ...p, length_meters: e.target.value }))} placeholder="0" style={inp} min="0" step="0.1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <SubmitBtn loading={saving}>➕ Qo'shish</SubmitBtn>
+        </form>
+      </div>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
+        <DateRangeFilter filter={filter} onChange={setFilter} />
+        {loading ? <Spinner /> : (
+          <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr><TH>Nomi</TH><TH>Rulon</TH><TH>Uzunlik</TH><TH>Sana</TH><TH></TH></tr></thead>
+              <tbody>
+                {list.map((m, i) => (
+                  <TRow key={m.id} idx={i}>
+                    <TD>{m.name}</TD><TD>{m.quantity_rolls} ta</TD>
+                    <TD>{m.length_meters} m</TD><TD>{m.date}</TD>
+                    <TD><DelBtn onClick={() => del(m.id)} /></TD>
+                  </TRow>
+                ))}
+                {!list.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SALES: TOSH TAB ──────────────────────────────────────────────────────────
+
+function SalesToshTab() {
+  const { showToast } = useToast();
+  const isMobile = useIsMobile();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState({ start: todayStr(), end: todayStr() });
+  const [form, setForm] = useState({ turi: "", soni: "", narxi: "", date: todayStr() });
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (filter.start) params.start = filter.start;
+      if (filter.end) params.end = filter.end;
+      const r = await api.get("/api/tosh", { params });
+      setList(Array.isArray(r.data) ? r.data : []);
+    } catch { showToast("Xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, [filter]);
+
+  const save = async e => {
+    e.preventDefault();
+    if (!form.turi || !form.soni || !form.narxi) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
+    setSaving(true);
+    try {
+      await api.post("/api/tosh", { turi: form.turi, soni: parseInt(form.soni), narxi: parseFloat(form.narxi), date: form.date });
+      showToast("Tosh kiritildi"); setForm(p => ({ ...p, turi: "", soni: "", narxi: "" })); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+    finally { setSaving(false); }
+  };
+
+  const del = async id => {
+    try { await api.delete(`/api/tosh/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  const total = list.reduce((s, l) => s + Number(l.soni) * Number(l.narxi), 0);
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 3fr", gap: "24px" }}>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "18px" }}>🪨 Tosh kiritish</h3>
+        <form onSubmit={save}>
+          <Field label="Turi" required>
+            <input type="text" value={form.turi} onChange={e => setForm(p => ({ ...p, turi: e.target.value }))} placeholder="Tosh turi" style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Soni (pachka)" required>
+            <input type="number" value={form.soni} onChange={e => setForm(p => ({ ...p, soni: e.target.value }))} placeholder="0" style={inp} min="1" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Narxi (so'm)" required>
+            <input type="number" value={form.narxi} onChange={e => setForm(p => ({ ...p, narxi: e.target.value }))} placeholder="0" style={inp} min="0" required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          <Field label="Sana" required>
+            <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inp} required
+              onFocus={e => e.target.style.borderColor = "#2d6a4f"} onBlur={e => e.target.style.borderColor = "#cbd5e1"} />
+          </Field>
+          {form.soni && form.narxi && (
+            <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", marginBottom: "12px", fontSize: "14px", color: "#065f46", fontWeight: 600 }}>
+              Jami: {fmt(Number(form.soni) * Number(form.narxi))} so'm
+            </div>
+          )}
+          <SubmitBtn loading={saving}>➕ Qo'shish</SubmitBtn>
+        </form>
+      </div>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>Kiritilganlar</h3>
+        <DateRangeFilter filter={filter} onChange={setFilter} />
+        {loading ? <Spinner /> : (
+          <>
+            <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr><TH>Turi</TH><TH>Soni</TH><TH>Narxi</TH><TH>Jami</TH><TH>Sana</TH><TH></TH></tr></thead>
+                <tbody>
+                  {list.map((l, i) => (
+                    <TRow key={l.id} idx={i}>
+                      <TD>{l.turi}</TD><TD>{l.soni} pachka</TD>
+                      <TD>{fmt(l.narxi)} so'm</TD>
+                      <TD><span style={{ fontWeight: 700, color: "#10b981" }}>{fmt(Number(l.soni) * Number(l.narxi))} so'm</span></TD>
+                      <TD>{l.date}</TD><TD><DelBtn onClick={() => del(l.id)} /></TD>
+                    </TRow>
+                  ))}
+                  {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#94a3b8" }}>Hali kiritilmagan</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            {list.length > 0 && <TotalCard label="Jami" value={total} />}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SALES: FIELDS TAB ────────────────────────────────────────────────────────
+
+function SalesFieldsTab() {
+  const { showToast } = useToast();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "sales" });
+
+  const load = async () => {
+    setLoading(true);
+    try { const r = await api.get("/api/fields", { params: { panel: "sales" } }); setList(Array.isArray(r.data) ? r.data : []); }
+    catch { showToast("Xato", "error"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const save = async e => {
+    e.preventDefault();
+    if (!form.name || !form.label) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
+    try {
+      await api.post("/api/fields", { ...form, panel: "sales" });
+      showToast("Maydon qo'shildi"); setModal(false);
+      setForm({ name: "", label: "", field_type: "text", options: "", is_required: false, module: "sales" }); load();
+    } catch (e) { showToast(e.response?.data?.detail || "Xato", "error"); }
+  };
+
+  const del = async id => {
+    if (!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
+    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi"); load(); }
+    catch { showToast("Xato", "error"); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari (Sales)</h2>
+        <BtnSm onClick={() => setModal(true)}>➕ Qo'shish</BtnSm>
+      </div>
+      {loading ? <Spinner /> : (
+        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH></TH></tr></thead>
+            <tbody>
+              {list.map((f, i) => (
+                <TRow key={f.id} idx={i}>
+                  <TD>{f.name}</TD><TD>{f.label}</TD>
+                  <TD><span style={{ padding: "3px 8px", background: "#eff6ff", color: "#3b82f6", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
+                  <TD>{f.module}</TD>
+                  <TD>{f.is_required ? "✅" : "—"}</TD>
+                  <TD><DelBtn onClick={() => del(f.id)} /></TD>
+                </TRow>
+              ))}
+              {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <Modal open={modal} onClose={() => setModal(false)} title="Sales maydon qo'shish">
+        <form onSubmit={save}>
+          <Field label="Nomi (name)" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="field_name" required /></Field>
+          <Field label="Sarlavha (label)" required><Inp value={form.label} onChange={v => setForm(p => ({ ...p, label: v }))} placeholder="Ko'rsatma matn" required /></Field>
+          <Field label="Turi">
+            <Sel value={form.field_type} onChange={v => setForm(p => ({ ...p, field_type: v }))}>
+              <option value="text">Matn</option><option value="number">Raqam</option>
+              <option value="select">Tanlash</option><option value="date">Sana</option>
+            </Sel>
+          </Field>
+          {form.field_type === "select" && (
+            <Field label="Variantlar (vergul bilan)"><Inp value={form.options} onChange={v => setForm(p => ({ ...p, options: v }))} placeholder="variant1,variant2" /></Field>
+          )}
+          <Field label="Modul"><Inp value={form.module} onChange={v => setForm(p => ({ ...p, module: v }))} placeholder="ip, skoch, material, tosh..." /></Field>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginBottom: "16px" }}>
+            <input type="checkbox" checked={form.is_required} onChange={e => setForm(p => ({ ...p, is_required: e.target.checked }))} />
+            <span style={{ fontSize: "14px", color: "#1e293b" }}>Majburiy maydon</span>
+          </label>
+          <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
+            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+// ─── TAB CONFIGS ─────────────────────────────────────────────────────────────
+
+const MAIN_TABS = [
+  { id: "stats", icon: "📊", label: "Statistika" },
+  { id: "admin", icon: "📋", label: "Admin paneli" },
+  { id: "sales", icon: "💰", label: "Sales paneli" },
+];
+
+const ADMIN_SUB_TABS = [
+  { id: "workers", icon: "👷", label: "Ishchilar" },
+  { id: "materials", icon: "🧵", label: "Materiallar" },
+  { id: "production", icon: "💰", label: "Kunlik maosh" },
+  { id: "attendance", icon: "🗓", label: "Davomat" },
+  { id: "users", icon: "👥", label: "Foydalanuvchilar" },
+  { id: "fields", icon: "📋", label: "Forma maydonlari" },
+];
+
+const SALES_SUB_TABS = [
+  { id: "ip", icon: "🪡", label: "Ip" },
+  { id: "skoch", icon: "📦", label: "Skoch" },
+  { id: "material", icon: "🧵", label: "Material" },
+  { id: "tosh", icon: "🪨", label: "Tosh" },
+  { id: "fields", icon: "📋", label: "Forma maydonlari" },
+];
+
 // ─── MAIN BOSS PANEL ──────────────────────────────────────────────────────────
 
 export default function BossPanel() {
-  const [activeTab, setActiveTab] = useState("stats");
+  const [mainTab, setMainTab] = useState("stats");
+  const [adminSub, setAdminSub] = useState("workers");
+  const [salesSub, setSalesSub] = useState("ip");
   const isMobile = useIsMobile();
 
-  const renderTab = () => {
-    switch (activeTab) {
-      case "stats": return <StatsTab />;
-      case "workers": return <WorkersTab />;
-      case "materials": return <MaterialsTab />;
-      case "production": return <ProductionTab />;
-      case "attendance": return <AttendanceTab />;
-      case "fields": return <FieldsTab />;
-      case "users": return <UsersTab />;
+  const renderAdminTab = () => {
+    switch (adminSub) {
+      case "workers": return <AdminWorkersTab />;
+      case "materials": return <AdminMaterialsTab />;
+      case "production": return <AdminProductionTab />;
+      case "attendance": return <AdminAttendanceTab />;
+      case "users": return <AdminUsersTab />;
+      case "fields": return <AdminFieldsTab />;
       default: return null;
     }
   };
 
+  const renderSalesTab = () => {
+    switch (salesSub) {
+      case "ip": return <SalesIpTab />;
+      case "skoch": return <SalesSkochTab />;
+      case "material": return <SalesMaterialTab />;
+      case "tosh": return <SalesToshTab />;
+      case "fields": return <SalesFieldsTab />;
+      default: return null;
+    }
+  };
+
+  const subTabStyle = (on) => ({
+    padding: isMobile ? "10px 14px" : "12px 20px",
+    border: "none",
+    background: on ? "#fff" : "transparent",
+    color: on ? "#2d6a4f" : "#64748b",
+    fontWeight: on ? 700 : 500,
+    fontSize: isMobile ? "12px" : "13px",
+    cursor: "pointer",
+    borderBottom: on ? "2px solid #2d6a4f" : "2px solid transparent",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+    transition: "all 0.15s",
+  });
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#f0f4f8" }}>
       <Navbar title="Boss Panel" />
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <Sidebar tabs={SIDEBAR_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-        <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "28px", paddingBottom: isMobile ? "80px" : "28px" }}>
+
+      {/* ── 3 main tabs ── */}
+      <div style={{ background: "#fff", borderBottom: "2px solid #e2e8f0", display: "flex", overflowX: "auto", WebkitOverflowScrolling: "touch", flexShrink: 0 }}>
+        {MAIN_TABS.map(t => {
+          const on = mainTab === t.id;
+          return (
+            <button key={t.id} onClick={() => setMainTab(t.id)} style={{
+              padding: isMobile ? "14px 18px" : "16px 32px",
+              border: "none", background: "transparent",
+              color: on ? "#2d6a4f" : "#64748b",
+              fontWeight: on ? 700 : 500,
+              fontSize: isMobile ? "13px" : "15px",
+              cursor: "pointer",
+              borderBottom: on ? "3px solid #2d6a4f" : "3px solid transparent",
+              whiteSpace: "nowrap", flexShrink: 0,
+              transition: "all 0.15s",
+            }}>
+              {t.icon} {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Content ── */}
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "24px" }}>
+
+        {/* Stats */}
+        {mainTab === "stats" && (
           <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: isMobile ? "16px" : "28px" }}>
-            {renderTab()}
+            <StatsTab />
           </div>
-        </main>
+        )}
+
+        {/* Admin panel */}
+        {mainTab === "admin" && (
+          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            <div style={{ borderBottom: "1px solid #e2e8f0", display: "flex", overflowX: "auto", WebkitOverflowScrolling: "touch", background: "#f8fafc" }}>
+              {ADMIN_SUB_TABS.map(t => (
+                <button key={t.id} onClick={() => setAdminSub(t.id)} style={subTabStyle(adminSub === t.id)}>
+                  {t.icon} {t.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ padding: isMobile ? "16px" : "28px" }}>
+              {renderAdminTab()}
+            </div>
+          </div>
+        )}
+
+        {/* Sales panel */}
+        {mainTab === "sales" && (
+          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            <div style={{ borderBottom: "1px solid #e2e8f0", display: "flex", overflowX: "auto", WebkitOverflowScrolling: "touch", background: "#f8fafc" }}>
+              {SALES_SUB_TABS.map(t => (
+                <button key={t.id} onClick={() => setSalesSub(t.id)} style={subTabStyle(salesSub === t.id)}>
+                  {t.icon} {t.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ padding: isMobile ? "16px" : "28px" }}>
+              {renderSalesTab()}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
