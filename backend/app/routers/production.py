@@ -31,7 +31,8 @@ def get_logs(
 
 @router.post("/", response_model=ProductionOut)
 def add_log(data: ProductionCreate, db: Session = Depends(get_db), user=Depends(require_role("admin"))):
-    log = ProductionLog(**data.model_dump(), logged_by=user.id)
+    d = data.model_dump(); d.pop('logged_by', None)
+    log = ProductionLog(**d, logged_by=user.id)
     db.add(log)
     db.commit()
     db.refresh(log)

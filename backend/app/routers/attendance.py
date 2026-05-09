@@ -66,7 +66,8 @@ def create_attendance(
         db.commit()
         db.refresh(existing)
         return existing
-    rec = Attendance(**data.model_dump(), logged_by=current_user.id)
+    d = data.model_dump(); d.pop('logged_by', None)
+    rec = Attendance(**d, logged_by=current_user.id)
     db.add(rec)
     db.commit()
     db.refresh(rec)

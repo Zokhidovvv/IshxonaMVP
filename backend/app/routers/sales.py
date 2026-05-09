@@ -25,7 +25,8 @@ def get_sales(
 
 @router.post("/", response_model=SalesOut)
 def add_sale(data: SalesCreate, db: Session = Depends(get_db), user=Depends(require_role("admin", "sales"))):
-    log = SalesLog(**data.dict(), logged_by=user.id)
+    d = data.model_dump(); d.pop('logged_by', None)
+    log = SalesLog(**d, logged_by=user.id)
     db.add(log)
     db.commit()
     db.refresh(log)
