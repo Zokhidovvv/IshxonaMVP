@@ -138,7 +138,6 @@ const SIDEBAR_TABS = [
   { id: "materials", icon: "🧵", label: "Materiallar" },
   { id: "production", icon: "💰", label: "Kunlik maosh" },
   { id: "attendance", icon: "🗓", label: "Davomat" },
-  { id: "fields", icon: "📋", label: "Forma maydonlari" },
 ];
 
 // ─── WORKERS TAB ─────────────────────────────────────────────────────────────
@@ -622,111 +621,6 @@ function AttendanceTab() {
   );
 }
 
-// ─── FIELDS TAB ───────────────────────────────────────────────────────────────
-
-function FieldsTab() {
-  const { showToast } = useToast();
-  const [list, setList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [modal, setModal] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const blank = { name: "", label: "", field_type: "text", options: "", is_required: false, module: "production" };
-  const [form, setForm] = useState(blank);
-
-  const load = async () => {
-    setLoading(true);
-    try { const r = await api.get("/api/fields", { params: { panel: "admin" } }); setList(r.data); }
-    catch { showToast("Maydonlarni olishda xato", "error"); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const openAdd = () => { setEditing(null); setForm(blank); setModal(true); };
-  const openEdit = f => { setEditing(f); setForm({ name: f.name, label: f.label, field_type: f.field_type, options: f.options || "", is_required: f.is_required, module: f.module }); setModal(true); };
-
-  const save = async e => {
-    e.preventDefault();
-    if (!form.name || !form.label) { showToast("Majburiy maydonlarni to'ldiring", "error"); return; }
-    try {
-      if (editing) { await api.put(`/api/fields/${editing.id}`, { ...form, panel: "admin" }); showToast("Saqlandi ✅"); }
-      else { await api.post("/api/fields", { ...form, panel: "admin" }); showToast("Maydon qo'shildi"); }
-      setModal(false); load();
-    } catch (e) { showToast(e.response?.data?.detail || "Xato ❌", "error"); }
-  };
-
-  const del = async id => {
-    if (!window.confirm("Rostan o'chirmoqchimisiz?")) return;
-    try { await api.delete(`/api/fields/${id}`); showToast("O'chirildi ✅"); load(); }
-    catch { showToast("Xato ❌", "error"); }
-  };
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>📋 Forma maydonlari (Admin)</h2>
-        <Btn onClick={openAdd}>➕ Qo'shish</Btn>
-      </div>
-      {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr><TH>Nomi</TH><TH>Label</TH><TH>Turi</TH><TH>Modul</TH><TH>Majburiy</TH><TH>Amallar</TH></tr></thead>
-            <tbody>
-              {list.map((f, i) => (
-                <TRow key={f.id} idx={i}>
-                  <TD>{f.name}</TD>
-                  <TD>{f.label}</TD>
-                  <TD><span style={{ padding: "3px 8px", background: "#f0fdf4", color: "#2d6a4f", borderRadius: "6px", fontSize: "12px" }}>{f.field_type}</span></TD>
-                  <TD>{f.module}</TD>
-                  <TD>{f.is_required ? "✅" : "—"}</TD>
-                  <TD><div style={{ display: "flex", gap: "6px" }}>
-                    <BtnSm onClick={() => openEdit(f)}>✏️</BtnSm>
-                    <BtnSm variant="danger" onClick={() => del(f.id)}>🗑️</BtnSm>
-                  </div></TD>
-                </TRow>
-              ))}
-              {!list.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>Ma'lumot yo'q</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "Maydonni tahrirlash" : "Admin maydon qo'shish"}>
-        <form onSubmit={save}>
-          <Field label="Nomi (name)" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="field_name" required /></Field>
-          <Field label="Sarlavha (label)" required><Inp value={form.label} onChange={v => setForm(p => ({ ...p, label: v }))} placeholder="Ko'rsatma matn" required /></Field>
-          <Field label="Turi">
-            <Sel value={form.field_type} onChange={v => setForm(p => ({ ...p, field_type: v }))}>
-              <option value="text">Matn</option>
-              <option value="number">Raqam</option>
-              <option value="select">Tanlash</option>
-              <option value="date">Sana</option>
-            </Sel>
-          </Field>
-          {form.field_type === "select" && (
-            <Field label="Variantlar (vergul bilan)"><Inp value={form.options} onChange={v => setForm(p => ({ ...p, options: v }))} placeholder="variant1,variant2" /></Field>
-          )}
-          <Field label="Modul">
-            <Sel value={form.module} onChange={v => setForm(p => ({ ...p, module: v }))}>
-              <option value="production">Ishlab chiqarish</option>
-              <option value="workers">Ishchilar</option>
-              <option value="materials">Materiallar</option>
-              <option value="attendance">Davomat</option>
-            </Sel>
-          </Field>
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginBottom: "16px" }}>
-            <input type="checkbox" checked={form.is_required} onChange={e => setForm(p => ({ ...p, is_required: e.target.checked }))} />
-            <span style={{ fontSize: "14px", color: "#1e293b" }}>Majburiy maydon</span>
-          </label>
-          <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
-            <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
-            <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
-          </div>
-        </form>
-      </Modal>
-    </div>
-  );
-}
-
 // ─── MAIN ADMIN PANEL ─────────────────────────────────────────────────────────
 
 export default function AdminPanel() {
@@ -739,7 +633,6 @@ export default function AdminPanel() {
       case "materials": return <MaterialsTab />;
       case "production": return <ProductionTab />;
       case "attendance": return <AttendanceTab />;
-      case "fields": return <FieldsTab />;
       default: return null;
     }
   };
