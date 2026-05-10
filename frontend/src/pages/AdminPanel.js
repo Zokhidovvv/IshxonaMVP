@@ -140,6 +140,8 @@ const SIDEBAR_TABS = [
   { id: "attendance", icon: "🗓", label: "Davomat" },
 ];
 
+const POSITIONS = ["Tikuvchi", "Bichuvchi", "Yordamchi", "Toshchi", "Dazmolchi", "Presschi"];
+
 // ─── WORKERS TAB ─────────────────────────────────────────────────────────────
 
 function WorkersTab() {
@@ -148,7 +150,7 @@ function WorkersTab() {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ firstname: "", lastname: "", age: "", position: "" });
+  const [form, setForm] = useState({ firstname: "", lastname: "", age: "", position: "", positionSel: "" });
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState({ key: "id", dir: 1 });
 
@@ -161,8 +163,11 @@ function WorkersTab() {
 
   useEffect(() => { load(); }, []);
 
-  const openAdd = () => { setEditing(null); setForm({ firstname: "", lastname: "", age: "", position: "" }); setModal(true); };
-  const openEdit = w => { setEditing(w); setForm({ firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "" }); setModal(true); };
+  const openAdd = () => { setEditing(null); setForm({ firstname: "", lastname: "", age: "", position: "", positionSel: "" }); setModal(true); };
+  const openEdit = w => {
+    const ps = POSITIONS.includes(w.position || "") ? (w.position || "") : (w.position ? "Boshqa" : "");
+    setEditing(w); setForm({ firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "", positionSel: ps }); setModal(true);
+  };
 
   const save = async e => {
     e.preventDefault();
@@ -248,7 +253,21 @@ function WorkersTab() {
           <Field label="Ism" required><Inp value={form.firstname} onChange={v => setForm(p => ({ ...p, firstname: v }))} placeholder="Ism" required /></Field>
           <Field label="Familiya" required><Inp value={form.lastname} onChange={v => setForm(p => ({ ...p, lastname: v }))} placeholder="Familiya" required /></Field>
           <Field label="Yosh"><Inp type="number" value={form.age} onChange={v => setForm(p => ({ ...p, age: v }))} placeholder="Yosh" min="14" /></Field>
-          <Field label="Lavozim" required><Inp value={form.position} onChange={v => setForm(p => ({ ...p, position: v }))} placeholder="Lavozim" required /></Field>
+          <Field label="Lavozim" required>
+            <Sel value={form.positionSel} onChange={v => {
+              if (v === "Boshqa") setForm(p => ({ ...p, positionSel: "Boshqa", position: "" }));
+              else setForm(p => ({ ...p, positionSel: v, position: v }));
+            }}>
+              <option value="">— Tanlang —</option>
+              {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+              <option value="Boshqa">Boshqa...</option>
+            </Sel>
+            {form.positionSel === "Boshqa" && (
+              <div style={{ marginTop: "8px" }}>
+                <Inp value={form.position} onChange={v => setForm(p => ({ ...p, position: v }))} placeholder="Lavozimni kiriting..." required />
+              </div>
+            )}
+          </Field>
           <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
             <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
             <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
@@ -643,8 +662,10 @@ export default function AdminPanel() {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <Sidebar tabs={SIDEBAR_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
         <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "28px", paddingBottom: isMobile ? "80px" : "28px" }}>
-          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: isMobile ? "16px" : "28px" }}>
-            {renderTab()}
+          <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+            <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: isMobile ? "16px" : "28px" }}>
+              {renderTab()}
+            </div>
           </div>
         </main>
       </div>

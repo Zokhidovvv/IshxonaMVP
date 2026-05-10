@@ -100,6 +100,29 @@ def delete_attendance(att_id: int, db: Session = Depends(get_db), _=Depends(requ
     db.delete(rec); db.commit()
     return {"message": "O'chirildi"}
 
+@router.get("/weekly-stats")
+def attendance_weekly_stats(db: Session = Depends(get_db)):
+    from datetime import date as dt, timedelta
+    today = dt.today()
+    result = []
+    for i in range(6, -1, -1):
+        d = today - timedelta(days=i)
+        recs = db.query(Attendance).filter(Attendance.date == d).all()
+        counts = {"keldi": 0, "kelmadi": 0, "yarim_kun": 0, "kasal": 0, "tatil": 0}
+        for r in recs:
+            if r.status in counts:
+                counts[r.status] += 1
+        result.append({
+            "date": str(d),
+            "label": d.strftime("%a"),
+            "keldi": counts["keldi"],
+            "kelmadi": counts["kelmadi"],
+            "yarim": counts["yarim_kun"],
+            "kasal": counts["kasal"],
+            "tatil": counts["tatil"],
+        })
+    return result
+
 @router.get("/stats")
 def attendance_stats(
     month: str = Query(..., description="Format: 2024-04"),

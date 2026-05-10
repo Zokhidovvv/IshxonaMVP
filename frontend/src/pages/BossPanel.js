@@ -27,6 +27,7 @@ function useIsMobile() {
 const todayStr = () => new Date().toISOString().split("T")[0];
 const fmt = n => Number(n || 0).toLocaleString();
 const SKOCH_PRICES = { "40": 130000, "32": 100000, "28": 100000 };
+const POSITIONS = ["Tikuvchi", "Bichuvchi", "Yordamchi", "Toshchi", "Dazmolchi", "Presschi"];
 
 function exportXLSX(rows, cols, filename) {
   const data = [cols.map(c => c.label), ...rows.map(r => cols.map(c => r[c.key] ?? ""))];
@@ -283,7 +284,7 @@ function AdminWorkersTab() {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ firstname: "", lastname: "", age: "", position: "" });
+  const [form, setForm] = useState({ firstname: "", lastname: "", age: "", position: "", positionSel: "" });
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState({ key: "id", dir: 1 });
 
@@ -296,8 +297,11 @@ function AdminWorkersTab() {
 
   useEffect(() => { load(); }, []);
 
-  const openAdd = () => { setEditing(null); setForm({ firstname: "", lastname: "", age: "", position: "" }); setModal(true); };
-  const openEdit = w => { setEditing(w); setForm({ firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "" }); setModal(true); };
+  const openAdd = () => { setEditing(null); setForm({ firstname: "", lastname: "", age: "", position: "", positionSel: "" }); setModal(true); };
+  const openEdit = w => {
+    const ps = POSITIONS.includes(w.position || "") ? (w.position || "") : (w.position ? "Boshqa" : "");
+    setEditing(w); setForm({ firstname: w.firstname, lastname: w.lastname, age: w.age || "", position: w.position || "", positionSel: ps }); setModal(true);
+  };
 
   const save = async e => {
     e.preventDefault();
@@ -372,7 +376,21 @@ function AdminWorkersTab() {
           <Field label="Ism" required><Inp value={form.firstname} onChange={v => setForm(p => ({ ...p, firstname: v }))} placeholder="Ism" required /></Field>
           <Field label="Familiya" required><Inp value={form.lastname} onChange={v => setForm(p => ({ ...p, lastname: v }))} placeholder="Familiya" required /></Field>
           <Field label="Yosh"><Inp type="number" value={form.age} onChange={v => setForm(p => ({ ...p, age: v }))} placeholder="Yosh" min="14" /></Field>
-          <Field label="Lavozim" required><Inp value={form.position} onChange={v => setForm(p => ({ ...p, position: v }))} placeholder="Lavozim" required /></Field>
+          <Field label="Lavozim" required>
+            <Sel value={form.positionSel} onChange={v => {
+              if (v === "Boshqa") setForm(p => ({ ...p, positionSel: "Boshqa", position: "" }));
+              else setForm(p => ({ ...p, positionSel: v, position: v }));
+            }}>
+              <option value="">— Tanlang —</option>
+              {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+              <option value="Boshqa">Boshqa...</option>
+            </Sel>
+            {form.positionSel === "Boshqa" && (
+              <div style={{ marginTop: "8px" }}>
+                <Inp value={form.position} onChange={v => setForm(p => ({ ...p, position: v }))} placeholder="Lavozimni kiriting..." required />
+              </div>
+            )}
+          </Field>
           <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
             <Btn style={{ variant: "muted", flex: 1 }} onClick={() => setModal(false)}>Bekor</Btn>
             <Btn type="submit" style={{ flex: 1 }}>Saqlash</Btn>
@@ -1499,6 +1517,7 @@ export default function BossPanel() {
 
       {/* ── Content ── */}
       <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "24px" }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
         {/* Stats */}
         {mainTab === "stats" && (
@@ -1538,6 +1557,7 @@ export default function BossPanel() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
