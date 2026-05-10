@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routers import auth, workers, production, sales, dashboard, users, materials, ip, skoch, tosh, attendance
-from .models import ip_log, skoch_log, tosh_log, attendance as attendance_model
+from .routers import auth, workers, production, sales, dashboard, users, materials, ip, skoch, tosh, attendance, purchases
+from .models import ip_log, skoch_log, tosh_log, attendance as attendance_model, purchase
 
 Base.metadata.create_all(bind=engine)
 
@@ -27,6 +27,7 @@ app.include_router(ip.router)
 app.include_router(skoch.router)
 app.include_router(tosh.router)
 app.include_router(attendance.router)
+app.include_router(purchases.router)
 
 @app.get("/")
 def root():

@@ -195,3 +195,26 @@ class MaterialOut(BaseModel):
     created_at: datetime
     class Config:
         from_attributes = True
+
+# ── PURCHASE (unified xaridlar) ───────────────────────
+class PurchaseCreate(BaseModel):
+    date: date
+    type: str               # ip | skoch | material | tosh
+    detail: Optional[str] = None
+    soni: int
+    narxi: Decimal
+    notes: Optional[str] = None
+    logged_by: Optional[str] = None
+
+class PurchaseOut(BaseModel):
+    id: int
+    date: date
+    type: str
+    detail: Optional[str]
+    soni: int
+    narxi: Decimal
+    notes: Optional[str]
+    logged_by: Optional[str]
+    created_at: datetime
+    class Config:
+        from_attributes = True

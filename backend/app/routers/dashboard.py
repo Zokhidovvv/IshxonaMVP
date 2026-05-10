@@ -12,6 +12,7 @@ from ..models.ip_log import IpLog
 from ..models.skoch_log import SkochLog
 from ..models.tosh_log import ToshLog
 from ..models.attendance import Attendance
+from ..models.purchase import Purchase
 from ..core.dependencies import require_role
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -89,21 +90,30 @@ def weekly_trend(db: Session = Depends(get_db)):
 @router.get("/purchases")
 def today_purchases(db: Session = Depends(get_db)):
     today = date.today()
-    ip_sum = db.query(func.sum(IpLog.narxi * IpLog.soni)).filter(IpLog.date == today).scalar() or 0
-    skoch_sum = db.query(func.sum(SkochLog.narxi * SkochLog.soni)).filter(SkochLog.date == today).scalar() or 0
-    tosh_sum = db.query(func.sum(ToshLog.narxi * ToshLog.soni)).filter(ToshLog.date == today).scalar() or 0
+    # Eski jadvallar (legacy)
+    ip_sum_old = db.query(func.sum(IpLog.narxi * IpLog.soni)).filter(IpLog.date == today).scalar() or 0
+    skoch_sum_old = db.query(func.sum(SkochLog.narxi * SkochLog.soni)).filter(SkochLog.date == today).scalar() or 0
+    tosh_sum_old = db.query(func.sum(ToshLog.narxi * ToshLog.soni)).filter(ToshLog.date == today).scalar() or 0
+    # Yangi unified jadval
+    new_rows = db.query(Purchase).filter(Purchase.date == today).all()
+    by_type = {"ip": 0, "skoch": 0, "material": 0, "tosh": 0}
+    counts = {"ip": 0, "skoch": 0, "material": 0, "tosh": 0}
+    for r in new_rows:
+        t = r.type if r.type in by_type else "ip"
+        by_type[t] += float(r.narxi) * r.soni
+        counts[t] += r.soni
     mat_count = db.query(func.count(Material.id)).scalar() or 0
-    ip_count = db.query(func.sum(IpLog.soni)).filter(IpLog.date == today).scalar() or 0
-    skoch_count = db.query(func.sum(SkochLog.soni)).filter(SkochLog.date == today).scalar() or 0
-    tosh_count = db.query(func.sum(ToshLog.soni)).filter(ToshLog.date == today).scalar() or 0
+    total_new = sum(by_type.values())
+    total_old = float(ip_sum_old) + float(skoch_sum_old) + float(tosh_sum_old)
     return {
-        "ip_sum": float(ip_sum),
-        "ip_count": int(ip_count or 0),
-        "skoch_sum": float(skoch_sum),
-        "skoch_count": int(skoch_count or 0),
-        "tosh_sum": float(tosh_sum),
-        "tosh_count": int(tosh_count or 0),
-        "materials_count": int(mat_count),
+        "ip_sum": float(ip_sum_old) + by_type["ip"],
+        "ip_count": int(db.query(func.sum(IpLog.soni)).filter(IpLog.date == today).scalar() or 0) + counts["ip"],
+        "skoch_sum": float(skoch_sum_old) + by_type["skoch"],
+        "skoch_count": int(db.query(func.sum(SkochLog.soni)).filter(SkochLog.date == today).scalar() or 0) + counts["skoch"],
+        "tosh_sum": float(tosh_sum_old) + by_type["tosh"],
+        "tosh_count": int(db.query(func.sum(ToshLog.soni)).filter(ToshLog.date == today).scalar() or 0) + counts["tosh"],
+        "materials_count": int(mat_count) + counts["material"],
+        "total_purchases": total_old + total_new,
     }
 
 @router.get("/attendance")
