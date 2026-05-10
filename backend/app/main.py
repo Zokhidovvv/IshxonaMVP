@@ -1,10 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from .database import engine, Base
 from .routers import auth, workers, production, sales, dashboard, users, materials, ip, skoch, tosh, attendance, purchases
 from .models import ip_log, skoch_log, tosh_log, attendance as attendance_model, purchase
 
 Base.metadata.create_all(bind=engine)
+
+# ── Mavjud jadvalga yangi ustun qo'shish (idempotent migrations) ──────────────
+_migrations = [
+    "ALTER TABLE purchases  ADD COLUMN IF NOT EXISTS color VARCHAR(50)",
+    "ALTER TABLE materials  ADD COLUMN IF NOT EXISTS color VARCHAR(50)",
+    "ALTER TABLE tosh_logs  ADD COLUMN IF NOT EXISTS color VARCHAR(50)",
+]
+with engine.connect() as _conn:
+    for _sql in _migrations:
+        try:
+            _conn.execute(text(_sql))
+        except Exception:
+            pass
+    _conn.commit()
 
 app = FastAPI(title="Factory API", version="1.0.0", docs_url="/docs")
 
