@@ -1,4 +1,4 @@
-const CACHE_NAME = "hadicha-wear-v2";
+const CACHE_NAME = "hadicha-wear-v3";
 const STATIC_ASSETS = [
   "/",
   "/login",
