@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/AuthContext";
 
@@ -8,6 +8,19 @@ export default function LoginPage() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = e => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    setInstallPrompt(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,6 +74,11 @@ export default function LoginPage() {
             📺 Monitor — loginsiz
           </a>
         </div>
+        {installPrompt && (
+          <button onClick={handleInstall} style={styles.installBtn}>
+            📱 Telefonga o'rnatish
+          </button>
+        )}
       </div>
     </div>
   );
@@ -74,4 +92,5 @@ const styles = {
   error: { background: "#dc2626", color: "#fff", padding: "10px 16px", borderRadius: 8, marginBottom: 16, fontSize: 14 },
   input: { width: "100%", padding: "12px 16px", marginBottom: 12, borderRadius: 8, border: "1px solid #334155", background: "#0f172a", color: "#fff", fontSize: 16, boxSizing: "border-box" },
   btn: { width: "100%", padding: "14px", borderRadius: 8, background: "#2d6a4f", color: "#fff", border: "none", fontSize: 16, fontWeight: 600, cursor: "pointer", minHeight: "48px" },
+  installBtn: { width: "100%", marginTop: 12, padding: "12px", borderRadius: 8, background: "#1e3a5f", color: "#93c5fd", border: "1px solid #3b82f6", fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: "44px" },
 };
