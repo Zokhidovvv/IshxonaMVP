@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import Modal from "../components/Modal";
 import { useToast } from "../components/Toast";
 import api from "../services/api";
 import * as XLSX from "xlsx";
@@ -169,7 +170,27 @@ export function PurchasesTable({ showNav = false }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(emptyForm());
+  const [mobileModal, setMobileModal] = useState(false);
   const blurTimerRef = useRef(null);
+
+  // ─── DRAFT: localStorage — refresh bo'lsa ma'lumot yo'qolmasin ────────────
+  useEffect(() => {
+    const draft = localStorage.getItem("purchase_draft");
+    if (draft) {
+      try {
+        const { form, id } = JSON.parse(draft);
+        if (form && id) { setEditForm(form); setEditingId(id); setMobileModal(true); }
+      } catch { localStorage.removeItem("purchase_draft"); }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (editingId !== null) {
+      localStorage.setItem("purchase_draft", JSON.stringify({ form: editForm, id: editingId }));
+    } else {
+      localStorage.removeItem("purchase_draft");
+    }
+  }, [editForm, editingId]);
   const [filter, setFilter] = useState({ datePreset: "month", from: `${todayStr().slice(0, 7)}-01`, to: todayStr(), typeFilter: "", search: "" });
   const [sort, setSort] = useState({ key: "date", dir: -1 });
   const rowRef = useRef(null);
@@ -226,7 +247,11 @@ export function PurchasesTable({ showNav = false }) {
     const f = emptyForm();
     setEditForm(f);
     setEditingId("new");
-    setTimeout(() => rowRef.current?.querySelector("input,select")?.focus(), 50);
+    if (isMobile) {
+      setMobileModal(true);
+    } else {
+      setTimeout(() => rowRef.current?.querySelector("input,select")?.focus(), 50);
+    }
   };
 
   const startEdit = (row) => {
@@ -239,10 +264,18 @@ export function PurchasesTable({ showNav = false }) {
       notes: row.notes || "",
     });
     setEditingId(row.id);
-    setTimeout(() => rowRef.current?.querySelector("input,select")?.focus(), 50);
+    if (isMobile) {
+      setMobileModal(true);
+    } else {
+      setTimeout(() => rowRef.current?.querySelector("input,select")?.focus(), 50);
+    }
   };
 
-  const cancelEdit = () => { setEditingId(null); setEditForm(emptyForm()); };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm(emptyForm());
+    setMobileModal(false);
+  };
 
   const handleTypeChange = (type) => {
     const detail = getDefaultDetail(type);
@@ -278,6 +311,7 @@ export function PurchasesTable({ showNav = false }) {
       }
       setEditingId(null);
       setEditForm(emptyForm());
+      setMobileModal(false);
       load();
     } catch (e) {
       showToast(e.response?.data?.detail || "Xato ❌", "error");
@@ -411,7 +445,7 @@ export function PurchasesTable({ showNav = false }) {
 
       {/* ── Table ── */}
       {loading ? <Spinner /> : (
-        <div className="table-wrapper" style={{ flex: 1, overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+        <div className="table-wrapper excel-table-container" style={{ flex: 1, overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "750px" }}>
             <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
               <tr>
@@ -433,8 +467,8 @@ export function PurchasesTable({ showNav = false }) {
               </tr>
             </thead>
             <tbody>
-              {/* Yangi qator */}
-              {editingId === "new" && (
+              {/* Yangi qator — faqat desktop da inline, mobile da modal */}
+              {editingId === "new" && !isMobile && (
                 <tr ref={rowRef} onBlur={handleRowBlur} onFocus={handleRowFocus} onKeyDown={handleKeyDown} style={{ background: "#fffbeb", outline: "2px solid #f59e0b", outlineOffset: "-2px" }}>
                   <td style={editCellStyle} />
                   <td style={editCellStyle}>
@@ -477,16 +511,17 @@ export function PurchasesTable({ showNav = false }) {
                 return (
                   <tr
                     key={row.id}
-                    ref={isEdit ? rowRef : null}
-                    onBlur={isEdit ? handleRowBlur : undefined}
-                    onFocus={isEdit ? handleRowFocus : undefined}
-                    onKeyDown={isEdit ? handleKeyDown : undefined}
-                    onDoubleClick={!isEdit && editingId === null ? () => startEdit(row) : undefined}
-                    style={{ background: bg, cursor: isEdit ? "default" : "pointer", transition: "background 0.1s" }}
+                    ref={isEdit && !isMobile ? rowRef : null}
+                    onBlur={isEdit && !isMobile ? handleRowBlur : undefined}
+                    onFocus={isEdit && !isMobile ? handleRowFocus : undefined}
+                    onKeyDown={isEdit && !isMobile ? handleKeyDown : undefined}
+                    onDoubleClick={!isEdit && !isMobile && editingId === null ? () => startEdit(row) : undefined}
+                    style={{ background: bg, cursor: isEdit ? "default" : "pointer", transition: "background 0.1s",
+                      outline: isEdit && isMobile ? "2px solid #f59e0b" : "none", outlineOffset: "-2px" }}
                   >
                     <td style={{ ...cellStyle, color: "#94a3b8", textAlign: "center", width: "40px" }}>{i + 1}</td>
 
-                    {isEdit ? (
+                    {isEdit && !isMobile ? (
                       <>
                         <td style={editCellStyle}>
                           <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={cellInp} />
@@ -575,6 +610,69 @@ export function PurchasesTable({ showNav = false }) {
         </div>
       )}
 
+      {/* ── Mobile Edit Modal ── */}
+      <Modal
+        open={mobileModal && isMobile}
+        onClose={cancelEdit}
+        title={editingId === "new" ? "➕ Yangi xarid" : "✏️ Xaridni tahrirlash"}
+      >
+        <div onKeyDown={handleKeyDown}>
+          {/* Sana */}
+          <MField label="Sana *">
+            <input type="date" value={editForm.date}
+              onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))}
+              style={mInp} />
+          </MField>
+          {/* Tur */}
+          <MField label="Tur *">
+            <select value={editForm.type} onChange={e => handleTypeChange(e.target.value)} style={mInp}>
+              {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </MField>
+          {/* Tafsilot */}
+          <MField label="Tafsilot">
+            <DetailInput type={editForm.type} value={editForm.detail} onChange={handleDetailChange}
+              style={{ ...mInp, height: "auto" }} />
+          </MField>
+          {/* Soni */}
+          <MField label="Soni *">
+            <input type="number" value={editForm.soni} min="1" placeholder="0"
+              onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))}
+              style={mInp} />
+          </MField>
+          {/* Narxi */}
+          <MField label="Narxi (so'm) *">
+            <input type="number" value={editForm.narxi} min="0" placeholder="0"
+              onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))}
+              style={mInp} />
+          </MField>
+          {/* Jami preview */}
+          {editForm.soni && editForm.narxi && (
+            <div style={{ padding: "12px 14px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0", marginBottom: "14px" }}>
+              <span style={{ fontWeight: 600, color: "#374151" }}>Jami: </span>
+              <span style={{ fontWeight: 800, color: "#2d6a4f", fontSize: "20px" }}>
+                {fmt(Number(editForm.soni) * Number(editForm.narxi))} so'm
+              </span>
+            </div>
+          )}
+          {/* Izoh */}
+          <MField label="Izoh">
+            <input type="text" value={editForm.notes} placeholder="Izoh..."
+              onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))}
+              style={mInp} />
+          </MField>
+          {/* Tugmalar */}
+          <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+            <button onClick={cancelEdit} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", background: "#f1f5f9", color: "#475569", fontSize: "15px", fontWeight: 600, minHeight: "52px", cursor: "pointer" }}>
+              Bekor
+            </button>
+            <button onClick={saveRow} disabled={saving} style={{ flex: 2, padding: "14px", borderRadius: "10px", border: "none", background: saving ? "#6ee7b7" : "#2d6a4f", color: "#fff", fontSize: "15px", fontWeight: 700, minHeight: "52px", cursor: saving ? "not-allowed" : "pointer" }}>
+              {saving ? "Saqlanmoqda..." : "✅ Saqlash"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Print styles */}
       <style>{`
         @media print {
@@ -586,6 +684,23 @@ export function PurchasesTable({ showNav = false }) {
     </div>
   );
 }
+
+// ─── MOBILE MODAL HELPERS ─────────────────────────────────────────────────────
+function MField({ label, children }) {
+  return (
+    <div style={{ marginBottom: "14px" }}>
+      <label style={{ display: "block", fontWeight: 600, fontSize: "14px", color: "#374151", marginBottom: "6px" }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+const mInp = {
+  width: "100%", padding: "13px 14px",
+  border: "1.5px solid #cbd5e1", borderRadius: "10px",
+  fontSize: "16px", outline: "none", color: "#1e293b",
+  background: "#fff", boxSizing: "border-box",
+  minHeight: "50px",
+};
 
 // ─── SALES PAGE ───────────────────────────────────────────────────────────────
 const SIDEBAR_TABS = [

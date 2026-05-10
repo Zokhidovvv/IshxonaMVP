@@ -155,11 +155,12 @@ button, a, [role="button"] {
 /* ─── MOBILE (≤ 768px) ───────────────────────────── */
 @media (max-width: 768px) {
 
-  /* Gorizontal scroll'ni oldini olish */
+  /* Gorizontal scroll'ni oldini olish + pull-to-refresh blok */
   body, html {
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
+    overscroll-behavior-y: contain;
   }
 
   /* Toast — Sidebar bottom nav (52px) dan yuqorida */
@@ -168,6 +169,19 @@ button, a, [role="button"] {
     right: 12px;
     left: 12px;
     max-width: 100%;
+  }
+
+  /* Excel jadval container — pull-to-refresh o'chirilgan */
+  .excel-table-container {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+
+  .excel-table-container input,
+  .excel-table-container select,
+  .excel-table-container textarea {
+    touch-action: manipulation;
   }
 
   /* ─ iOS auto-zoom oldini olish ─

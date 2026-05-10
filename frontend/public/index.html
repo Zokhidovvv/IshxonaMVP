@@ -2,7 +2,7 @@
 <html lang="uz">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#1e3a5f" />
     <meta name="description" content="Hadicha Wear zavod boshqaruv tizimi" />
     <!-- Android PWA -->
@@ -24,6 +24,8 @@
         background: #f0f4f8;
         color: #1e293b;
         -webkit-font-smoothing: antialiased;
+        overscroll-behavior-y: contain;
+        overscroll-behavior-x: none;
       }
       #root { height: 100%; }
       @keyframes spin { to { transform: rotate(360deg); } }
