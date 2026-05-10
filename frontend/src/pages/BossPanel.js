@@ -257,7 +257,7 @@ function StatsTab() {
       {top.length > 0 && (
         <div style={{ background: "#fff", borderRadius: "12px", padding: "20px", border: "1px solid #e2e8f0" }}>
           <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#1e293b", marginBottom: "16px" }}>🏆 Top ishchilar</h3>
-          <div style={{ overflowX: "auto" }}>
+          <div className="table-wrapper" style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr><TH>#</TH><TH>Ism</TH><TH>Jami maosh</TH></tr></thead>
               <tbody>
@@ -346,7 +346,7 @@ function AdminWorkersTab() {
         </div>
       </div>
       {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
               <SortTH sortKey="id" sort={sort} onSort={toggleSort}>ID</SortTH>
@@ -475,7 +475,7 @@ function AdminMaterialsTab() {
       </div>
       <DateRangeFilter filter={filter} onChange={setFilter} />
       {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
               <SortTH sortKey="name" sort={sort} onSort={toggleSort}>Nomi</SortTH>
@@ -591,7 +591,7 @@ function AdminProductionTab() {
       <DateRangeFilter filter={filter} onChange={v => setFilter(p => ({ ...p, ...v }))} />
       {loading ? <Spinner /> : (
         <>
-          <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr><TH>Ishchi</TH><TH>Maosh (so'm)</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
               <tbody>
@@ -701,7 +701,7 @@ function AdminAttendanceTab() {
         </div>
       </div>
       {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "32px" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "32px" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr><TH>Ism</TH><TH>Familiya</TH><TH>Status</TH>{!isMobile && <TH>Izoh</TH>}</tr></thead>
             <tbody>
@@ -736,7 +736,7 @@ function AdminAttendanceTab() {
         {stats.length > 0 && <BtnSm variant="success" onClick={doExport}>📥 Excel</BtnSm>}
       </div>
       {stats.length > 0 && (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr><TH>Ism</TH><TH>✅ Keldi</TH><TH>❌ Kelmadi</TH><TH>🕐 Yarim</TH><TH>🤒 Kasal</TH><TH>🏖 Ta'til</TH><TH>Jami</TH></tr></thead>
             <tbody>
@@ -828,7 +828,7 @@ function AdminUsersTab() {
         </div>
       </div>
       {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr><TH>ID</TH><TH>Login</TH><TH>Rol</TH><TH>Amallar</TH></tr></thead>
             <tbody>

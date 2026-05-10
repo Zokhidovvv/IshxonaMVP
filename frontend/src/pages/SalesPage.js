@@ -116,9 +116,9 @@ function FilterBar({ filter, onChange, isMobile }) {
   };
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", marginBottom: "12px" }}>
+    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", flexWrap: isMobile ? "nowrap" : "wrap", gap: isMobile ? "6px" : "8px", alignItems: isMobile ? "stretch" : "center", marginBottom: "12px" }}>
       {/* Date presets */}
-      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+      <div className="filter-btns" style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
         {[
           { key: "all", label: "Hammasi" },
           { key: "today", label: "Bugun" },
@@ -139,20 +139,23 @@ function FilterBar({ filter, onChange, isMobile }) {
         ))}
       </div>
       {/* Custom date range */}
-      <input type="date" value={filter.from} onChange={e => onChange({ ...filter, datePreset: "custom", from: e.target.value })}
-        style={dateInp} title="Dan" />
-      <span style={{ color: "#94a3b8", fontSize: "13px" }}>—</span>
-      <input type="date" value={filter.to} onChange={e => onChange({ ...filter, datePreset: "custom", to: e.target.value })}
-        style={dateInp} title="Gacha" />
-      {/* Type filter */}
-      <select value={filter.typeFilter} onChange={e => onChange({ ...filter, typeFilter: e.target.value })} style={{ ...dateInp, minWidth: "110px" }}>
-        <option value="">Barcha tur</option>
-        {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-      </select>
-      {/* Search */}
-      <input type="text" value={filter.search} onChange={e => onChange({ ...filter, search: e.target.value })}
-        placeholder="🔍 Qidirish..."
-        style={{ ...dateInp, minWidth: isMobile ? "140px" : "180px" }} />
+      <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "nowrap" }}>
+        <input type="date" value={filter.from} onChange={e => onChange({ ...filter, datePreset: "custom", from: e.target.value })}
+          style={{ ...dateInp, flex: 1, minWidth: 0 }} title="Dan" />
+        <span style={{ color: "#94a3b8", fontSize: "13px", flexShrink: 0 }}>—</span>
+        <input type="date" value={filter.to} onChange={e => onChange({ ...filter, datePreset: "custom", to: e.target.value })}
+          style={{ ...dateInp, flex: 1, minWidth: 0 }} title="Gacha" />
+      </div>
+      {/* Type filter + Search */}
+      <div style={{ display: "flex", gap: "6px", flexWrap: isMobile ? "nowrap" : "wrap" }}>
+        <select value={filter.typeFilter} onChange={e => onChange({ ...filter, typeFilter: e.target.value })} style={{ ...dateInp, flex: 1, minWidth: 0 }}>
+          <option value="">Barcha tur</option>
+          {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+        <input type="text" value={filter.search} onChange={e => onChange({ ...filter, search: e.target.value })}
+          placeholder="🔍 Qidirish..."
+          style={{ ...dateInp, flex: 2, minWidth: 0 }} />
+      </div>
     </div>
   );
 }
@@ -382,15 +385,15 @@ export function PurchasesTable({ showNav = false }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* ── Toolbar ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>🛒 Xaridlar</h2>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <button onClick={() => window.print()} style={outlineBtn}>🖨️ Chop etish</button>
-          <button onClick={() => importRef.current?.click()} style={outlineBtn}>📤 Import</button>
+      <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
+        <h2 style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: 700, color: "#1e293b" }}>🛒 Xaridlar</h2>
+        <div className="toolbar-actions" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {!isMobile && <button onClick={() => window.print()} style={outlineBtn}>🖨️ Chop etish</button>}
+          <button onClick={() => importRef.current?.click()} style={outlineBtn}>{isMobile ? "📤" : "📤 Import"}</button>
           <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={importExcel} />
-          <button onClick={exportExcel} style={outlineBtn}>📥 Export</button>
+          <button onClick={exportExcel} style={outlineBtn}>{isMobile ? "📥" : "📥 Export"}</button>
           <button onClick={startNew} disabled={editingId !== null} style={primaryBtn}>
-            ➕ Yangi qator
+            ➕ {isMobile ? "Qo'sh" : "Yangi qator"}
           </button>
         </div>
       </div>
@@ -400,7 +403,7 @@ export function PurchasesTable({ showNav = false }) {
 
       {/* ── Table ── */}
       {loading ? <Spinner /> : (
-        <div style={{ flex: 1, overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+        <div className="table-wrapper" style={{ flex: 1, overflowX: "auto", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "750px" }}>
             <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
               <tr>
@@ -581,12 +584,13 @@ const SIDEBAR_TABS = [
 ];
 
 export default function SalesPage() {
+  const isMobile = useIsMobile();
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#f0f4f8" }}>
       <Navbar title="Xaridlar" />
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <main style={{ flex: 1, overflowY: "auto", padding: "20px 24px", paddingBottom: "24px" }}>
-          <div style={{ maxWidth: "1400px", margin: "0 auto", background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: "24px", minHeight: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
+        <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "10px" : "20px 24px", paddingBottom: isMobile ? "16px" : "24px" }}>
+          <div style={{ maxWidth: "1400px", margin: "0 auto", background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: isMobile ? "14px" : "24px", minHeight: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
             <PurchasesTable />
           </div>
         </main>

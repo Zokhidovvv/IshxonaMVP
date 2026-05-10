@@ -1,0 +1,194 @@
+/* =====================================================
+   HADICHA WEAR — GLOBAL MOBILE CSS
+   Professional responsive styles — bu fayl global
+   ishlaydigan va buzilmaydigan CSS ni ta'minlaydi.
+   ===================================================== */
+
+/* ─── GLOBAL RESET ─────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── ANIMATIONS ────────────────────────────────────
+   Inline style'larda ishlatiladigan animatsiyalar
+   albatta CSS faylda bo'lishi kerak.
+*/
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+@keyframes toastIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ─── UTILITY CLASSES ───────────────────────────────── */
+
+/* Jadval gorizontal scroll */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-wrapper::-webkit-scrollbar { height: 4px; }
+.table-wrapper::-webkit-scrollbar-track { background: #f1f5f9; }
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+/* Desktop/Mobile ko'rish boshqaruvi */
+.mobile-only  { display: none; }
+.desktop-only { display: block; }
+
+/* Hamburger tugma (CSS ready, React tomonidan qo'shilganda ishlaydi) */
+.hamburger-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  color: #fff;
+  border-radius: 8px;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Sidebar overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  -webkit-tap-highlight-color: transparent;
+}
+.sidebar-overlay.show { display: block; }
+
+/* Filter tugmalari — gorizontal scroll */
+.filter-btns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ─── DESKTOP (≥ 1025px) ─────────────────────────── */
+@media (min-width: 1025px) {
+  .panel-max-width {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .mobile-only  { display: none  !important; }
+  .desktop-only { display: block !important; }
+}
+
+/* ─── TABLET (769px – 1024px) ────────────────────── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .mobile-only  { display: none  !important; }
+  .desktop-only { display: block !important; }
+}
+
+/* ─── MOBILE (≤ 768px) ───────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Gorizontal scroll'ni oldini olish */
+  body, html {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* ─ iOS auto-zoom oldini olish ─
+     iOS input focus paytida font-size < 16px bo'lsa zoom qiladi.
+     Bu bilan zoom bo'lmaydi. */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Utility override */
+  .mobile-only  { display: block !important; }
+  .desktop-only { display: none  !important; }
+  .hamburger-btn { display: flex !important; }
+
+  /* Filter tugmalari — mobile da gorizontal scroll */
+  .filter-btns {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .filter-btns::-webkit-scrollbar { display: none; }
+  .filter-btns button {
+    flex-shrink: 0 !important;
+    white-space: nowrap;
+  }
+
+  /* Toolbar — kichik ekranda vertikal */
+  .toolbar-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Jadval wrapper — chap/o'ng padding compensation */
+  .table-wrapper {
+    margin-left: -4px;
+    margin-right: -4px;
+  }
+
+  /* Stat card */
+  .stat-card {
+    padding: 14px !important;
+  }
+}
+
+/* ─── PRINT ──────────────────────────────────────── */
+@media print {
+  nav, aside, .no-print, .hamburger-btn, .sidebar-overlay {
+    display: none !important;
+  }
+  body { background: white !important; }
+  table { font-size: 11px !important; }
+  * {
+    box-shadow: none !important;
+    border-color: #ddd !important;
+  }
+}

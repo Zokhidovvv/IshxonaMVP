@@ -215,7 +215,7 @@ function WorkersTab() {
         </div>
       </div>
       {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
@@ -353,7 +353,7 @@ function MaterialsTab() {
       </div>
       <DateRangeFilter filter={filter} onChange={setFilter} />
       {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
@@ -475,7 +475,7 @@ function ProductionTab() {
       <DateRangeFilter filter={filter} onChange={v => setFilter(p => ({ ...p, ...v }))} />
       {loading ? <Spinner /> : (
         <>
-          <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr><TH>Ishchi</TH><TH>Maosh (so'm)</TH><TH>Sana</TH><TH>Amallar</TH></tr></thead>
               <tbody>
@@ -580,7 +580,7 @@ function AttendanceTab() {
         </div>
       </div>
       {loading ? <Spinner /> : (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "32px" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "32px" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr><TH>Ism</TH><TH>Familiya</TH><TH>Status</TH>{!isMobile && <TH>Izoh</TH>}</tr></thead>
             <tbody>
@@ -615,7 +615,7 @@ function AttendanceTab() {
         <input type="month" value={statsMonth} onChange={e => setStatsMonth(e.target.value)} style={dateInp} />
       </div>
       {stats.length > 0 && (
-        <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div className="table-wrapper" style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr><TH>Ism</TH><TH>✅ Keldi</TH><TH>❌ Kelmadi</TH><TH>🕐 Yarim</TH><TH>🤒 Kasal</TH><TH>🏖 Ta'til</TH><TH>Jami</TH></tr>
