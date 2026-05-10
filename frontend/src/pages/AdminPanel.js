@@ -10,6 +10,49 @@ import DateRangeFilter from "../components/DateRangeFilter";
 const todayStr = () => new Date().toISOString().split("T")[0];
 const fmt = n => Number(n || 0).toLocaleString();
 
+const COLORS = [
+  { name: "Qora", hex: "#1e1e1e" }, { name: "Oq", hex: "#f1f5f9" },
+  { name: "Qizil", hex: "#dc2626" }, { name: "Yashil", hex: "#16a34a" },
+  { name: "Ko'k", hex: "#2563eb" }, { name: "Sariq", hex: "#eab308" },
+  { name: "Pushti", hex: "#ec4899" }, { name: "Jigarrang", hex: "#92400e" },
+  { name: "Kulrang", hex: "#6b7280" }, { name: "Boshqa", hex: null },
+];
+const COLOR_MAP = {};
+COLORS.forEach(c => { if (c.hex) COLOR_MAP[c.name] = c.hex; });
+
+function ColorDot({ name }) {
+  if (!name) return <span style={{ color: "#94a3b8" }}>—</span>;
+  const hex = COLOR_MAP[name];
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+      <span style={{ display: "inline-block", width: 11, height: 11, borderRadius: "50%", background: hex || "#94a3b8", border: "1px solid rgba(0,0,0,0.2)", flexShrink: 0 }} />
+      {name}
+    </span>
+  );
+}
+
+function ColorSelect({ value, onChange, style }) {
+  const knownNames = COLORS.filter(c => c.name !== "Boshqa").map(c => c.name);
+  const isCustom = value && !knownNames.includes(value);
+  const [customMode, setCustomMode] = useState(isCustom);
+  const selVal = customMode ? "Boshqa" : (value || "");
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      <select value={selVal} onChange={e => {
+        if (e.target.value === "Boshqa") { setCustomMode(true); onChange(""); }
+        else { setCustomMode(false); onChange(e.target.value); }
+      }} style={style}>
+        <option value="">— Rang —</option>
+        {COLORS.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+      </select>
+      {customMode && (
+        <input type="text" value={value} onChange={e => onChange(e.target.value)}
+          placeholder="Rang kiriting..." style={style} />
+      )}
+    </div>
+  );
+}
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   useEffect(() => {
@@ -290,7 +333,7 @@ function MaterialsTab() {
   const [filter, setFilter] = useState({ start: "", end: "" });
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState({ key: "date", dir: -1 });
-  const [form, setForm] = useState({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() });
+  const [form, setForm] = useState({ name: "", color: "", quantity_rolls: "", length_meters: "", date: todayStr() });
 
   const load = async () => {
     setLoading(true);
@@ -306,13 +349,13 @@ function MaterialsTab() {
 
   useEffect(() => { load(); }, [filter]);
 
-  const openAdd = () => { setEditing(null); setForm({ name: "", quantity_rolls: "", length_meters: "", date: todayStr() }); setModal(true); };
-  const openEdit = m => { setEditing(m); setForm({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date }); setModal(true); };
+  const openAdd = () => { setEditing(null); setForm({ name: "", color: "", quantity_rolls: "", length_meters: "", date: todayStr() }); setModal(true); };
+  const openEdit = m => { setEditing(m); setForm({ name: m.name, color: m.color || "", quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date }); setModal(true); };
 
   const save = async e => {
     e.preventDefault();
     if (!form.name || !form.quantity_rolls || !form.length_meters || !form.date) { showToast("Barcha maydonlarni to'ldiring", "error"); return; }
-    const body = { name: form.name, quantity_rolls: parseInt(form.quantity_rolls), length_meters: parseFloat(form.length_meters), date: form.date };
+    const body = { name: form.name, color: form.color || null, quantity_rolls: parseInt(form.quantity_rolls), length_meters: parseFloat(form.length_meters), date: form.date };
     try {
       if (editing) { await api.put(`/api/materials/${editing.id}`, body); showToast("Saqlandi ✅"); }
       else { await api.post("/api/materials", body); showToast("Material qo'shildi"); }
@@ -336,8 +379,8 @@ function MaterialsTab() {
   });
 
   const doExport = () => exportXLSX(
-    sorted.map(m => ({ name: m.name, quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date })),
-    [{ key: "name", label: "Nomi" }, { key: "quantity_rolls", label: "Rulon soni" }, { key: "length_meters", label: "Uzunlik (m)" }, { key: "date", label: "Sana" }],
+    sorted.map(m => ({ name: m.name, color: m.color || "", quantity_rolls: m.quantity_rolls, length_meters: m.length_meters, date: m.date })),
+    [{ key: "name", label: "Nomi" }, { key: "color", label: "Rang" }, { key: "quantity_rolls", label: "Rulon soni" }, { key: "length_meters", label: "Uzunlik (m)" }, { key: "date", label: "Sana" }],
     "materiallar.xlsx"
   );
 
@@ -359,6 +402,7 @@ function MaterialsTab() {
             <thead>
               <tr>
                 <SortTH sortKey="name" sort={sort} onSort={toggleSort}>Nomi</SortTH>
+                <SortTH sortKey="color" sort={sort} onSort={toggleSort}>Rang</SortTH>
                 <SortTH sortKey="quantity_rolls" sort={sort} onSort={toggleSort}>Rulon soni</SortTH>
                 <SortTH sortKey="length_meters" sort={sort} onSort={toggleSort}>Uzunlik (m)</SortTH>
                 <SortTH sortKey="date" sort={sort} onSort={toggleSort}>Sana</SortTH>
@@ -369,6 +413,7 @@ function MaterialsTab() {
               {sorted.map((m, i) => (
                 <TRow key={m.id} idx={i}>
                   <TD>{m.name}</TD>
+                  <TD><ColorDot name={m.color} /></TD>
                   <TD>{m.quantity_rolls}</TD>
                   <TD>{m.length_meters}</TD>
                   <TD>{m.date}</TD>
@@ -378,7 +423,7 @@ function MaterialsTab() {
                   </div></TD>
                 </TRow>
               ))}
-              {!sorted.length && <tr><td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>{search ? "Topilmadi" : "Ma'lumot yo'q"}</td></tr>}
+              {!sorted.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>{search ? "Topilmadi" : "Ma'lumot yo'q"}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -386,6 +431,10 @@ function MaterialsTab() {
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? "Materialni tahrirlash" : "Material qo'shish"}>
         <form onSubmit={save}>
           <Field label="Nomi" required><Inp value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Material nomi" required /></Field>
+          <Field label="Rang">
+            <ColorSelect value={form.color} onChange={v => setForm(p => ({ ...p, color: v }))}
+              style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #cbd5e1", borderRadius: "8px", fontSize: "16px", outline: "none", background: "#fff" }} />
+          </Field>
           <Field label="Rulon soni" required><Inp type="number" value={form.quantity_rolls} onChange={v => setForm(p => ({ ...p, quantity_rolls: v }))} placeholder="Rulon soni" required min="1" /></Field>
           <Field label="Uzunlik (m)" required><Inp type="number" value={form.length_meters} onChange={v => setForm(p => ({ ...p, length_meters: v }))} placeholder="Uzunlik metrlarda" required min="0" /></Field>
           <Field label="Sana" required><Inp type="date" value={form.date} onChange={v => setForm(p => ({ ...p, date: v }))} required /></Field>

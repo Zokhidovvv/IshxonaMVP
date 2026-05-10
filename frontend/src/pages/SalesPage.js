@@ -23,10 +23,26 @@ const IP_COLORS = ["Qora", "Oq", "Qizil", "Yashil", "Ko'k", "Sariq", "Pushti", "
 const SKOCH_SIZES = ["40mm", "32mm", "28mm"];
 const SKOCH_PRICES = { "40mm": 130000, "32mm": 100000, "28mm": 100000 };
 
+const COLORS = [
+  { name: "Qora",       hex: "#1e1e1e" },
+  { name: "Oq",         hex: "#f1f5f9" },
+  { name: "Qizil",      hex: "#dc2626" },
+  { name: "Yashil",     hex: "#16a34a" },
+  { name: "Ko'k",       hex: "#2563eb" },
+  { name: "Sariq",      hex: "#eab308" },
+  { name: "Pushti",     hex: "#ec4899" },
+  { name: "Jigarrang",  hex: "#92400e" },
+  { name: "Kulrang",    hex: "#6b7280" },
+  { name: "Boshqa",     hex: null },
+];
+const COLOR_MAP = {};
+COLORS.forEach(c => { if (c.hex) COLOR_MAP[c.name] = c.hex; });
+
 const emptyForm = () => ({
   date: todayStr(),
   type: "ip",
   detail: "Qora",
+  color: "",
   soni: "",
   narxi: "",
   notes: "",
@@ -41,6 +57,44 @@ function getDefaultDetail(type) {
 function getDefaultPrice(type, detail) {
   if (type === "skoch" && SKOCH_PRICES[detail]) return SKOCH_PRICES[detail];
   return "";
+}
+
+// ─── RANG YORDAMCHILARI ───────────────────────────────────────────────────────
+function ColorDot({ name }) {
+  if (!name) return null;
+  const hex = COLOR_MAP[name];
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap" }}>
+      <span style={{
+        display: "inline-block", width: 11, height: 11, borderRadius: "50%",
+        background: hex || "#94a3b8", border: "1px solid rgba(0,0,0,0.2)",
+        flexShrink: 0, verticalAlign: "middle",
+      }} />
+      {name}
+    </span>
+  );
+}
+
+function ColorSelect({ value, onChange, style }) {
+  const knownNames = COLORS.filter(c => c.name !== "Boshqa").map(c => c.name);
+  const isCustom = value && !knownNames.includes(value);
+  const [customMode, setCustomMode] = useState(isCustom);
+  const selVal = customMode ? "Boshqa" : (value || "");
+  return (
+    <div>
+      <select value={selVal} onChange={e => {
+        if (e.target.value === "Boshqa") { setCustomMode(true); onChange(""); }
+        else { setCustomMode(false); onChange(e.target.value); }
+      }} style={style}>
+        <option value="">— Rang —</option>
+        {COLORS.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+      </select>
+      {customMode && (
+        <input type="text" value={value} onChange={e => onChange(e.target.value)}
+          placeholder="Rang kiriting..." style={{ ...style, marginTop: "4px" }} />
+      )}
+    </div>
+  );
 }
 
 // ─── YORDAMCHI KOMPONENTLAR ───────────────────────────────────────────────────
@@ -147,11 +201,17 @@ function FilterBar({ filter, onChange, isMobile }) {
         <input type="date" value={filter.to} onChange={e => onChange({ ...filter, datePreset: "custom", to: e.target.value })}
           style={{ ...dateInp, flex: 1, minWidth: 0 }} title="Gacha" />
       </div>
-      {/* Type filter + Search */}
-      <div style={{ display: "flex", gap: "6px", flexWrap: isMobile ? "nowrap" : "wrap" }}>
+      {/* Type + Color filter + Search */}
+      <div style={{ display: "flex", gap: "6px", flexWrap: isMobile ? "wrap" : "wrap" }}>
         <select value={filter.typeFilter} onChange={e => onChange({ ...filter, typeFilter: e.target.value })} style={{ ...dateInp, flex: 1, minWidth: 0 }}>
           <option value="">Barcha tur</option>
           {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+        <select value={filter.colorFilter} onChange={e => onChange({ ...filter, colorFilter: e.target.value })} style={{ ...dateInp, flex: 1, minWidth: 0 }}>
+          <option value="">Barcha rang</option>
+          {COLORS.filter(c => c.name !== "Boshqa").map(c => (
+            <option key={c.name} value={c.name}>{c.name}</option>
+          ))}
         </select>
         <input type="text" value={filter.search} onChange={e => onChange({ ...filter, search: e.target.value })}
           placeholder="🔍 Qidirish..."
@@ -191,7 +251,7 @@ export function PurchasesTable({ showNav = false }) {
       localStorage.removeItem("purchase_draft");
     }
   }, [editForm, editingId]);
-  const [filter, setFilter] = useState({ datePreset: "month", from: `${todayStr().slice(0, 7)}-01`, to: todayStr(), typeFilter: "", search: "" });
+  const [filter, setFilter] = useState({ datePreset: "month", from: `${todayStr().slice(0, 7)}-01`, to: todayStr(), typeFilter: "", colorFilter: "", search: "" });
   const [sort, setSort] = useState({ key: "date", dir: -1 });
   const rowRef = useRef(null);
   const importRef = useRef(null);
@@ -215,8 +275,12 @@ export function PurchasesTable({ showNav = false }) {
   const filtered = rows.filter(r => {
     if (filter.search) {
       const q = filter.search.toLowerCase();
-      const hay = `${r.date} ${TYPE_LABELS[r.type] || r.type} ${r.detail || ""} ${r.notes || ""}`.toLowerCase();
+      const hay = `${r.date} ${TYPE_LABELS[r.type] || r.type} ${r.detail || ""} ${r.color || ""} ${r.notes || ""}`.toLowerCase();
       if (!hay.includes(q)) return false;
+    }
+    if (filter.colorFilter) {
+      const rowColor = r.type === "ip" ? r.detail : r.color;
+      if (!rowColor || !rowColor.toLowerCase().includes(filter.colorFilter.toLowerCase())) return false;
     }
     return true;
   });
@@ -259,6 +323,7 @@ export function PurchasesTable({ showNav = false }) {
       date: row.date,
       type: row.type,
       detail: row.detail || "",
+      color: row.color || "",
       soni: row.soni,
       narxi: row.narxi,
       notes: row.notes || "",
@@ -280,7 +345,7 @@ export function PurchasesTable({ showNav = false }) {
   const handleTypeChange = (type) => {
     const detail = getDefaultDetail(type);
     const narxi = getDefaultPrice(type, detail);
-    setEditForm(p => ({ ...p, type, detail, narxi: narxi || p.narxi }));
+    setEditForm(p => ({ ...p, type, detail, color: "", narxi: narxi || p.narxi }));
   };
 
   const handleDetailChange = (detail) => {
@@ -298,6 +363,7 @@ export function PurchasesTable({ showNav = false }) {
         date: editForm.date,
         type: editForm.type,
         detail: editForm.detail || null,
+        color: (editForm.type === "material" || editForm.type === "tosh") ? (editForm.color || null) : null,
         soni: parseInt(editForm.soni),
         narxi: parseFloat(editForm.narxi),
         notes: editForm.notes || null,
@@ -349,19 +415,23 @@ export function PurchasesTable({ showNav = false }) {
 
   // ─── EXCEL EKSPORT ────────────────────────────────────────────────────────
   const exportExcel = () => {
-    const headers = ["№", "Sana", "Tur", "Tafsilot", "Soni", "Narxi (so'm)", "Jami (so'm)", "Izoh"];
-    const data = sorted.map((r, i) => [
-      i + 1,
-      r.date,
-      TYPE_LABELS[r.type] || r.type,
-      r.detail || "-",
-      r.soni,
-      Number(r.narxi),
-      Number(r.narxi) * Number(r.soni),
-      r.notes || "",
-    ]);
+    const headers = ["№", "Sana", "Tur", "Tafsilot", "Rang", "Soni", "Narxi (so'm)", "Jami (so'm)", "Izoh"];
+    const data = sorted.map((r, i) => {
+      const rang = r.type === "ip" ? (r.detail || "") : (r.color || "");
+      return [
+        i + 1,
+        r.date,
+        TYPE_LABELS[r.type] || r.type,
+        r.detail || "-",
+        rang,
+        r.soni,
+        Number(r.narxi),
+        Number(r.narxi) * Number(r.soni),
+        r.notes || "",
+      ];
+    });
     const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-    ws["!cols"] = [{ wch: 4 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 20 }];
+    ws["!cols"] = [{ wch: 4 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 10 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 20 }];
     // Header bold
     headers.forEach((_, ci) => {
       const cell = ws[XLSX.utils.encode_cell({ r: 0, c: ci })];
@@ -481,6 +551,9 @@ export function PurchasesTable({ showNav = false }) {
                   </td>
                   <td style={editCellStyle}>
                     <DetailInput type={editForm.type} value={editForm.detail} onChange={handleDetailChange} />
+                    {(editForm.type === "material" || editForm.type === "tosh") && (
+                      <ColorSelect value={editForm.color} onChange={v => setEditForm(p => ({ ...p, color: v }))} style={{ ...cellInp, marginTop: "4px" }} />
+                    )}
                   </td>
                   <td style={editCellStyle}>
                     <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} placeholder="0" min="1" style={cellInp} />
@@ -533,6 +606,9 @@ export function PurchasesTable({ showNav = false }) {
                         </td>
                         <td style={editCellStyle}>
                           <DetailInput type={editForm.type} value={editForm.detail} onChange={handleDetailChange} />
+                          {(editForm.type === "material" || editForm.type === "tosh") && (
+                            <ColorSelect value={editForm.color} onChange={v => setEditForm(p => ({ ...p, color: v }))} style={{ ...cellInp, marginTop: "4px" }} />
+                          )}
                         </td>
                         <td style={editCellStyle}>
                           <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} min="1" style={cellInp} />
@@ -557,7 +633,18 @@ export function PurchasesTable({ showNav = false }) {
                       <>
                         <td style={cellStyle}>{row.date}</td>
                         <td style={cellStyle}><TypeBadge type={row.type} /></td>
-                        <td style={cellStyle}>{row.detail || "—"}</td>
+                        <td style={cellStyle}>
+                          {row.type === "ip" ? (
+                            <ColorDot name={row.detail} />
+                          ) : (row.type === "material" || row.type === "tosh") ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                              <span>{row.detail || "—"}</span>
+                              {row.color && <ColorDot name={row.color} />}
+                            </div>
+                          ) : (
+                            row.detail || "—"
+                          )}
+                        </td>
                         <td style={{ ...cellStyle, textAlign: "right" }}>{fmt(row.soni)}</td>
                         <td style={{ ...cellStyle, textAlign: "right" }}>{fmt(row.narxi)}</td>
                         <td style={{ ...cellStyle, textAlign: "right", fontWeight: 700, color: "#2d6a4f" }}>{fmt(total)}</td>
@@ -634,6 +721,12 @@ export function PurchasesTable({ showNav = false }) {
             <DetailInput type={editForm.type} value={editForm.detail} onChange={handleDetailChange}
               style={{ ...mInp, height: "auto" }} />
           </MField>
+          {/* Rang — faqat Material va Tosh uchun */}
+          {(editForm.type === "material" || editForm.type === "tosh") && (
+            <MField label="Rang">
+              <ColorSelect value={editForm.color} onChange={v => setEditForm(p => ({ ...p, color: v }))} style={mInp} />
+            </MField>
+          )}
           {/* Soni */}
           <MField label="Soni *">
             <input type="number" value={editForm.soni} min="1" placeholder="0"

@@ -145,6 +145,7 @@ class SkochLogOut(BaseModel):
 # ── TOSH LOG ──────────────────────────────────────────
 class ToshLogCreate(BaseModel):
     turi: str
+    color: Optional[str] = None
     soni: int
     narxi: Decimal
     date: date
@@ -153,6 +154,7 @@ class ToshLogCreate(BaseModel):
 class ToshLogOut(BaseModel):
     id: int
     turi: str
+    color: Optional[str]
     soni: int
     narxi: Decimal
     date: date
@@ -182,6 +184,7 @@ class AttendanceOut(BaseModel):
 # ── MATERIAL ─────────────────────────────────────────
 class MaterialCreate(BaseModel):
     name: str
+    color: Optional[str] = None
     quantity_rolls: int
     length_meters: Decimal
     date: date
@@ -189,6 +192,7 @@ class MaterialCreate(BaseModel):
 class MaterialOut(BaseModel):
     id: int
     name: str
+    color: Optional[str]
     quantity_rolls: int
     length_meters: Decimal
     date: date
@@ -201,6 +205,7 @@ class PurchaseCreate(BaseModel):
     date: date
     type: str               # ip | skoch | material | tosh
     detail: Optional[str] = None
+    color: Optional[str] = None
     soni: int
     narxi: Decimal
     notes: Optional[str] = None
@@ -211,6 +216,7 @@ class PurchaseOut(BaseModel):
     date: date
     type: str
     detail: Optional[str]
+    color: Optional[str]
     soni: int
     narxi: Decimal
     notes: Optional[str]

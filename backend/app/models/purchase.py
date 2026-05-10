@@ -8,6 +8,7 @@ class Purchase(Base):
     date = Column(Date, nullable=False)
     type = Column(String(20), nullable=False)   # ip | skoch | material | tosh
     detail = Column(String(200), nullable=True) # rang / razmer / nomi / turi
+    color = Column(String(50), nullable=True)   # material va tosh uchun rang
     soni = Column(Integer, nullable=False)
     narxi = Column(Numeric(12, 2), nullable=False)
     notes = Column(Text, nullable=True)
