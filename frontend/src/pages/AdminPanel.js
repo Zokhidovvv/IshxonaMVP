@@ -90,9 +90,10 @@ function BtnSm({ onClick, variant = "primary", children, title }) {
   const bg = { primary: "#2d6a4f", danger: "#ef4444", success: "#10b981" };
   return (
     <button onClick={onClick} title={title} style={{
-      padding: "8px 12px", borderRadius: "6px", border: "none",
-      fontWeight: 600, fontSize: "13px", cursor: "pointer",
-      background: bg[variant], color: "#fff", minHeight: "44px"
+      padding: "10px 14px", borderRadius: "6px", border: "none",
+      fontWeight: 600, fontSize: "14px", cursor: "pointer",
+      background: bg[variant], color: "#fff", minHeight: "44px",
+      WebkitTapHighlightColor: "transparent",
     }}>{children}</button>
   );
 }
@@ -467,7 +468,7 @@ function ProductionTab() {
         </div>
       </div>
       <div style={{ marginBottom: "10px" }}>
-        <select value={filter.worker_id} onChange={e => setFilter(p => ({ ...p, worker_id: e.target.value }))} style={{ ...dateInp, minWidth: "180px" }}>
+        <select value={filter.worker_id} onChange={e => setFilter(p => ({ ...p, worker_id: e.target.value }))} style={{ ...dateInp, minWidth: "180px", width: "100%" }}>
           <option value="">Barcha ishchilar</option>
           {workers.map(w => <option key={w.id} value={w.id}>{w.firstname} {w.lastname}</option>)}
         </select>
@@ -592,7 +593,7 @@ function AttendanceTab() {
                     <TD>{w.lastname}</TD>
                     <TD>
                       <select value={status} onChange={e => setAttMap(p => ({ ...p, [w.id]: e.target.value }))}
-                        style={{ padding: "8px 10px", borderRadius: "6px", border: "1.5px solid #e2e8f0", fontSize: "13px", background: "#fff", cursor: "pointer", minHeight: "40px" }}>
+                        style={{ padding: "8px 10px", borderRadius: "6px", border: "1.5px solid #e2e8f0", fontSize: "16px", background: "#fff", cursor: "pointer", minHeight: "44px", width: "100%" }}>
                         {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                       </select>
                     </TD>

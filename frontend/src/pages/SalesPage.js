@@ -167,8 +167,9 @@ export function PurchasesTable({ showNav = false }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState(null); // null | "new" | number
+  const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(emptyForm());
+  const blurTimerRef = useRef(null);
   const [filter, setFilter] = useState({ datePreset: "month", from: `${todayStr().slice(0, 7)}-01`, to: todayStr(), typeFilter: "", search: "" });
   const [sort, setSort] = useState({ key: "date", dir: -1 });
   const rowRef = useRef(null);
@@ -297,12 +298,19 @@ export function PurchasesTable({ showNav = false }) {
     if (e.key === "Escape") { e.preventDefault(); cancelEdit(); }
   };
 
-  // Click outside row to save
-  const handleRowBlur = (e) => {
-    if (rowRef.current && !rowRef.current.contains(e.relatedTarget)) {
-      if (editForm.soni && editForm.narxi) saveRow();
-      else cancelEdit();
-    }
+  // Click outside row to save — timeout fixes iOS relatedTarget: null bug
+  const handleRowBlur = () => {
+    if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    blurTimerRef.current = setTimeout(() => {
+      if (!rowRef.current?.contains(document.activeElement)) {
+        if (editForm.soni && editForm.narxi) saveRow();
+        else cancelEdit();
+      }
+    }, 150);
+  };
+
+  const handleRowFocus = () => {
+    if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
   };
 
   // ─── EXCEL EKSPORT ────────────────────────────────────────────────────────
@@ -427,7 +435,7 @@ export function PurchasesTable({ showNav = false }) {
             <tbody>
               {/* Yangi qator */}
               {editingId === "new" && (
-                <tr ref={rowRef} onBlur={handleRowBlur} onKeyDown={handleKeyDown} style={{ background: "#fffbeb", outline: "2px solid #f59e0b", outlineOffset: "-2px" }}>
+                <tr ref={rowRef} onBlur={handleRowBlur} onFocus={handleRowFocus} onKeyDown={handleKeyDown} style={{ background: "#fffbeb", outline: "2px solid #f59e0b", outlineOffset: "-2px" }}>
                   <td style={editCellStyle} />
                   <td style={editCellStyle}>
                     <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} style={cellInp} />
@@ -471,6 +479,7 @@ export function PurchasesTable({ showNav = false }) {
                     key={row.id}
                     ref={isEdit ? rowRef : null}
                     onBlur={isEdit ? handleRowBlur : undefined}
+                    onFocus={isEdit ? handleRowFocus : undefined}
                     onKeyDown={isEdit ? handleKeyDown : undefined}
                     onDoubleClick={!isEdit && editingId === null ? () => startEdit(row) : undefined}
                     style={{ background: bg, cursor: isEdit ? "default" : "pointer", transition: "background 0.1s" }}
@@ -625,39 +634,39 @@ const dateInp = {
 };
 
 const primaryBtn = {
-  padding: "8px 16px", borderRadius: "8px",
+  padding: "10px 16px", borderRadius: "8px",
   border: "none", fontWeight: 700, fontSize: "14px",
   cursor: "pointer", background: "#2d6a4f", color: "#fff",
-  minHeight: "38px",
+  minHeight: "44px",
 };
 
 const outlineBtn = {
-  padding: "8px 14px", borderRadius: "8px",
+  padding: "10px 14px", borderRadius: "8px",
   border: "1.5px solid #cbd5e1", fontWeight: 600, fontSize: "13px",
   cursor: "pointer", background: "#fff", color: "#475569",
-  minHeight: "38px",
+  minHeight: "44px",
 };
 
 const saveBtn = {
-  padding: "6px 10px", borderRadius: "6px", border: "none",
+  padding: "10px 14px", borderRadius: "6px", border: "none",
   fontWeight: 700, fontSize: "14px", cursor: "pointer",
-  background: "#2d6a4f", color: "#fff", minHeight: "32px",
+  background: "#2d6a4f", color: "#fff", minHeight: "44px",
 };
 
 const cancelBtn = {
-  padding: "6px 10px", borderRadius: "6px", border: "none",
+  padding: "10px 14px", borderRadius: "6px", border: "none",
   fontWeight: 700, fontSize: "14px", cursor: "pointer",
-  background: "#f1f5f9", color: "#64748b", minHeight: "32px",
+  background: "#f1f5f9", color: "#64748b", minHeight: "44px",
 };
 
 const editBtn = {
-  padding: "5px 9px", borderRadius: "5px", border: "none",
-  fontSize: "13px", cursor: "pointer",
-  background: "#dbeafe", color: "#2563eb", minHeight: "30px",
+  padding: "10px 12px", borderRadius: "6px", border: "none",
+  fontSize: "14px", cursor: "pointer",
+  background: "#dbeafe", color: "#2563eb", minHeight: "44px",
 };
 
 const delBtn = {
-  padding: "5px 9px", borderRadius: "5px", border: "none",
-  fontSize: "13px", cursor: "pointer",
-  background: "#fee2e2", color: "#ef4444", minHeight: "30px",
+  padding: "10px 12px", borderRadius: "6px", border: "none",
+  fontSize: "14px", cursor: "pointer",
+  background: "#fee2e2", color: "#ef4444", minHeight: "44px",
 };

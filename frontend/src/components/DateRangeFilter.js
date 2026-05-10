@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 const PRESETS = [
   { id: "today", label: "Bugun" },
   { id: "week", label: "Bu hafta" },
@@ -5,6 +7,16 @@ const PRESETS = [
   { id: "year", label: "Bu yil" },
   { id: "all", label: "Hammasi" },
 ];
+
+function useIsMobile() {
+  const [v, setV] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < 768);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return v;
+}
 
 function getPresetDates(id) {
   const now = new Date();
@@ -42,10 +54,12 @@ const dateInpStyle = {
 };
 
 export default function DateRangeFilter({ filter, onChange }) {
+  const isMobile = useIsMobile();
   const active = getActivePreset(filter);
   return (
     <div style={{ marginBottom: "14px" }}>
-      <div style={{
+      {/* Preset tugmalari — mobile da gorizontal scroll */}
+      <div className="filter-btns" style={{
         display: "flex", gap: "6px", marginBottom: "10px",
         overflowX: "auto", paddingBottom: "2px",
         WebkitOverflowScrolling: "touch",
@@ -54,28 +68,33 @@ export default function DateRangeFilter({ filter, onChange }) {
           const on = active === p.id;
           return (
             <button key={p.id} onClick={() => onChange(getPresetDates(p.id))} style={{
-              padding: "6px 16px", borderRadius: "20px", flexShrink: 0,
+              padding: "8px 16px", borderRadius: "20px", flexShrink: 0,
               border: `1.5px solid ${on ? "#1e3a5f" : "#cbd5e1"}`,
               background: on ? "#1e3a5f" : "#fff",
               color: on ? "#fff" : "#64748b",
               fontSize: "13px", fontWeight: on ? 700 : 400,
-              cursor: "pointer", whiteSpace: "nowrap", minHeight: "34px",
+              cursor: "pointer", whiteSpace: "nowrap", minHeight: "40px",
             }}>{p.label}</button>
           );
         })}
       </div>
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label style={{ fontSize: "13px", color: "#64748b", whiteSpace: "nowrap" }}>Dan:</label>
+      {/* Sana diapazoni */}
+      <div style={{
+        display: "flex", gap: "8px",
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: isMobile ? "stretch" : "center",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
+          <label style={{ fontSize: "13px", color: "#64748b", whiteSpace: "nowrap", minWidth: "40px" }}>Dan:</label>
           <input type="date" value={filter.start || ""}
             onChange={e => onChange({ ...filter, start: e.target.value })}
-            style={dateInpStyle} />
+            style={{ ...dateInpStyle, flex: 1, minWidth: 0 }} />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label style={{ fontSize: "13px", color: "#64748b", whiteSpace: "nowrap" }}>Gacha:</label>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
+          <label style={{ fontSize: "13px", color: "#64748b", whiteSpace: "nowrap", minWidth: "40px" }}>Gacha:</label>
           <input type="date" value={filter.end || ""}
             onChange={e => onChange({ ...filter, end: e.target.value })}
-            style={dateInpStyle} />
+            style={{ ...dateInpStyle, flex: 1, minWidth: 0 }} />
         </div>
       </div>
     </div>

@@ -16,24 +16,22 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div style={{
-        position: "fixed", bottom: "24px", right: "24px",
-        zIndex: 9999, display: "flex", flexDirection: "column", gap: "10px",
-        pointerEvents: "none"
-      }}>
+      <div className="toast-container">
         {toasts.map(t => (
           <div key={t.id} style={{
             padding: "14px 20px",
             borderRadius: "10px",
             color: "#fff",
             fontWeight: 600,
-            fontSize: "14px",
+            fontSize: "15px",
             background: t.type === "error" ? "#ef4444" : t.type === "warning" ? "#f59e0b" : "#10b981",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
             animation: "slideInRight 0.3s ease",
-            maxWidth: "360px",
             wordBreak: "break-word",
-            pointerEvents: "auto"
+            pointerEvents: "auto",
+            minHeight: "48px",
+            display: "flex",
+            alignItems: "center",
           }}>
             {t.type === "error" ? "❌ " : t.type === "warning" ? "⚠️ " : "✅ "}{t.message}
           </div>

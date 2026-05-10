@@ -75,10 +75,10 @@ export default function Navbar({ title }) {
             background: "rgba(255,255,255,0.12)",
             border: "1px solid rgba(255,255,255,0.2)",
             color: "#fff",
-            padding: isMobile ? "8px 12px" : "6px 14px",
+            padding: isMobile ? "10px 14px" : "6px 14px",
             borderRadius: "7px", cursor: "pointer",
             fontSize: "13px", fontWeight: 600,
-            minHeight: "40px", whiteSpace: "nowrap"
+            minHeight: "44px", whiteSpace: "nowrap"
           }}>
             {isMobile ? "✕" : "Chiqish"}
           </button>
