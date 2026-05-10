@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = process.env.REACT_APP_API_URL || "http://172.20.10.3:8000";
+const BASE_URL = "https://factory-api-t3cb.onrender.com";
 
 const api = axios.create({ baseURL: BASE_URL });
 
