@@ -33,9 +33,9 @@ function ColorDot({ name }) {
 
 function ColorSelect({ value, onChange, style }) {
   const knownNames = COLORS.filter(c => c.name !== "Boshqa").map(c => c.name);
-  const isCustom = value && !knownNames.includes(value);
-  const [customMode, setCustomMode] = useState(isCustom);
+  const [customMode, setCustomMode] = useState(() => !!(value && !knownNames.includes(value)));
   const selVal = customMode ? "Boshqa" : (value || "");
+  useEffect(() => { if (!value) setCustomMode(false); }, [value]);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
       <select value={selVal} onChange={e => {
@@ -371,7 +371,7 @@ function MaterialsTab() {
 
   const toggleSort = key => setSort(p => ({ key, dir: p.key === key ? -p.dir : 1 }));
 
-  const filtered = list.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = list.filter(m => (m.name + " " + (m.color || "")).toLowerCase().includes(search.toLowerCase()));
   const sorted = [...filtered].sort((a, b) => {
     const va = String(a[sort.key] || "").toLowerCase();
     const vb = String(b[sort.key] || "").toLowerCase();

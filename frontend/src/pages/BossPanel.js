@@ -52,9 +52,9 @@ function ColorDot({ name }) {
 
 function ColorSelect({ value, onChange, style }) {
   const knownNames = COLORS.filter(c => c.name !== "Boshqa").map(c => c.name);
-  const isCustom = value && !knownNames.includes(value);
-  const [customMode, setCustomMode] = useState(isCustom);
+  const [customMode, setCustomMode] = useState(() => !!(value && !knownNames.includes(value)));
   const selVal = customMode ? "Boshqa" : (value || "");
+  useEffect(() => { if (!value) setCustomMode(false); }, [value]);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
       <select value={selVal} onChange={e => {

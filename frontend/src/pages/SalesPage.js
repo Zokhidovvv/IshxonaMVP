@@ -77,9 +77,14 @@ function ColorDot({ name }) {
 
 function ColorSelect({ value, onChange, style }) {
   const knownNames = COLORS.filter(c => c.name !== "Boshqa").map(c => c.name);
-  const isCustom = value && !knownNames.includes(value);
-  const [customMode, setCustomMode] = useState(isCustom);
+  const [customMode, setCustomMode] = useState(() => !!(value && !knownNames.includes(value)));
   const selVal = customMode ? "Boshqa" : (value || "");
+
+  // Tashqaridan value "" ga reset bo'lganda customMode ni o'chir
+  useEffect(() => {
+    if (!value) setCustomMode(false);
+  }, [value]);
+
   return (
     <div>
       <select value={selVal} onChange={e => {
@@ -435,10 +440,10 @@ export function PurchasesTable({ showNav = false }) {
     // Header bold
     headers.forEach((_, ci) => {
       const cell = ws[XLSX.utils.encode_cell({ r: 0, c: ci })];
-      if (cell) cell.s = { font: { bold: true }, fill: { fgColor: { rgb: "2D6A4F" } }, font2: { color: { rgb: "FFFFFF" } } };
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2D6A4F" } } };
     });
-    // Total row
-    const totalRow = ["", "", "JAMI", "", totals.count, "", totals.sum, ""];
+    // Total row — 9 ustun: №,Sana,Tur,Tafsilot,Rang,Soni,Narxi,Jami,Izoh
+    const totalRow = ["", "", "JAMI", "", "", totals.count, "", totals.sum, ""];
     XLSX.utils.sheet_add_aoa(ws, [totalRow], { origin: data.length + 1 });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Xaridlar");
