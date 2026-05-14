@@ -11,14 +11,22 @@ const todayStr = () => new Date().toISOString().split("T")[0];
 const fmt = n => Number(n || 0).toLocaleString();
 const fmtSum = n => Number(n || 0).toLocaleString() + " so'm";
 
-const TYPES = [
-  { value: "ip", label: "Ip" },
-  { value: "skoch", label: "Skoch" },
-  { value: "material", label: "Material" },
-  { value: "tosh", label: "Tosh" },
-];
-const TYPE_LABELS = { ip: "Ip", skoch: "Skoch", material: "Material", tosh: "Tosh" };
-const TYPE_COLORS = { ip: "#3b82f6", skoch: "#10b981", material: "#8b5cf6", tosh: "#f59e0b" };
+const TYPE_META = {
+  ip:        { label: "Ip",        color: "#3b82f6", icon: "🧵" },
+  skoch:     { label: "Skoch",     color: "#10b981", icon: "📦" },
+  material:  { label: "Material",  color: "#8b5cf6", icon: "🧶" },
+  tosh:      { label: "Tosh",      color: "#f59e0b", icon: "🪨" },
+  maosh:     { label: "Maosh",     color: "#d97706", icon: "💵" },
+  xarajat:   { label: "Xarajat",  color: "#6b7280", icon: "📋" },
+  soliq:     { label: "Soliq",     color: "#dc2626", icon: "🏛️" },
+  transport: { label: "Transport", color: "#2563eb", icon: "🚚" },
+  kommunal:  { label: "Kommunal", color: "#f97316", icon: "💡" },
+  boshqa:    { label: "Boshqa",   color: "#7c3aed", icon: "⚙️" },
+};
+const EXPENSE_TYPES = ["maosh", "xarajat", "soliq", "transport", "kommunal", "boshqa"];
+const TYPES = Object.entries(TYPE_META).map(([value, m]) => ({ value, label: m.label }));
+const TYPE_LABELS = Object.fromEntries(Object.entries(TYPE_META).map(([k, v]) => [k, v.label]));
+const TYPE_COLORS = Object.fromEntries(Object.entries(TYPE_META).map(([k, v]) => [k, v.color]));
 const IP_COLORS = ["Qora", "Oq", "Qizil", "Yashil", "Ko'k", "Sariq", "Pushti", "Jigarrang", "Kulrang", "Boshqa"];
 const SKOCH_SIZES = ["40mm", "32mm", "28mm"];
 const SKOCH_PRICES = { "40mm": 130000, "32mm": 100000, "28mm": 100000 };
@@ -122,17 +130,29 @@ function Spinner() {
 }
 
 function TypeBadge({ type }) {
+  const meta = TYPE_META[type] || { label: type, color: "#94a3b8", icon: "" };
   return (
     <span style={{
       display: "inline-block", padding: "2px 8px", borderRadius: "12px",
       fontSize: "12px", fontWeight: 700,
-      background: TYPE_COLORS[type] + "20", color: TYPE_COLORS[type],
-      border: `1px solid ${TYPE_COLORS[type]}40`
+      background: meta.color + "20", color: meta.color,
+      border: `1px solid ${meta.color}40`
     }}>
-      {TYPE_LABELS[type] || type}
+      {meta.icon} {meta.label}
     </span>
   );
 }
+
+const DETAIL_PLACEHOLDERS = {
+  material:  "Nomi...",
+  tosh:      "Turi...",
+  maosh:     "Kimga, sabab (masalan: Zohid akaga oylik)...",
+  xarajat:   "Xarajat nomi...",
+  soliq:     "Soliq turi, davri...",
+  transport: "Marshrut, tafsilot...",
+  kommunal:  "Elektr, suv, gaz...",
+  boshqa:    "Tafsilot...",
+};
 
 // Tafsilot maydoni (tur ga qarab)
 function DetailInput({ type, value, onChange, style }) {
@@ -154,7 +174,7 @@ function DetailInput({ type, value, onChange, style }) {
   return (
     <input
       type="text" value={value} onChange={e => onChange(e.target.value)}
-      placeholder={type === "tosh" ? "Turi..." : "Nomi..."}
+      placeholder={DETAIL_PLACEHOLDERS[type] || "Tafsilot..."}
       style={s}
     />
   );
@@ -350,7 +370,8 @@ export function PurchasesTable({ showNav = false }) {
   const handleTypeChange = (type) => {
     const detail = getDefaultDetail(type);
     const narxi = getDefaultPrice(type, detail);
-    setEditForm(p => ({ ...p, type, detail, color: "", narxi: narxi || p.narxi }));
+    const extra = EXPENSE_TYPES.includes(type) ? { soni: 1 } : {};
+    setEditForm(p => ({ ...p, type, detail, color: "", narxi: narxi || p.narxi, ...extra }));
   };
 
   const handleDetailChange = (detail) => {
@@ -466,7 +487,12 @@ export function PurchasesTable({ showNav = false }) {
         for (const r of rows) {
           // Format: Sana | Tur | Tafsilot | Soni | Narxi | Izoh
           const [sana, tur, tafsilot, soni, narxi, izoh] = r;
-          const typeMap = { ip: "ip", skoch: "skoch", material: "material", tosh: "tosh", "Ip": "ip", "Skoch": "skoch", "Material": "material", "Tosh": "tosh" };
+          const typeMap = {
+            ip: "ip", skoch: "skoch", material: "material", tosh: "tosh",
+            maosh: "maosh", xarajat: "xarajat", soliq: "soliq", transport: "transport", kommunal: "kommunal", boshqa: "boshqa",
+            "Ip": "ip", "Skoch": "skoch", "Material": "material", "Tosh": "tosh",
+            "Maosh": "maosh", "Xarajat": "xarajat", "Soliq": "soliq", "Transport": "transport", "Kommunal": "kommunal", "Boshqa": "boshqa",
+          };
           const type = typeMap[String(tur).trim()] || "ip";
           const dateVal = typeof sana === "number"
             ? new Date(Math.round((sana - 25569) * 86400 * 1000)).toISOString().split("T")[0]
