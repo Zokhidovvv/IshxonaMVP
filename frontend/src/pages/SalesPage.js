@@ -12,18 +12,12 @@ const fmt = n => Number(n || 0).toLocaleString();
 const fmtSum = n => Number(n || 0).toLocaleString() + " so'm";
 
 const TYPE_META = {
-  ip:        { label: "Ip",        color: "#3b82f6", icon: "🧵" },
-  skoch:     { label: "Skoch",     color: "#10b981", icon: "📦" },
-  material:  { label: "Material",  color: "#8b5cf6", icon: "🧶" },
-  tosh:      { label: "Tosh",      color: "#f59e0b", icon: "🪨" },
-  maosh:     { label: "Maosh",     color: "#d97706", icon: "💵" },
-  xarajat:   { label: "Xarajat",  color: "#6b7280", icon: "📋" },
-  soliq:     { label: "Soliq",     color: "#dc2626", icon: "🏛️" },
-  transport: { label: "Transport", color: "#2563eb", icon: "🚚" },
-  kommunal:  { label: "Kommunal", color: "#f97316", icon: "💡" },
-  boshqa:    { label: "Boshqa",   color: "#7c3aed", icon: "⚙️" },
+  ip:       { label: "Ip",       color: "#3b82f6", icon: "🧵" },
+  skoch:    { label: "Skoch",    color: "#10b981", icon: "📦" },
+  material: { label: "Material", color: "#8b5cf6", icon: "🧶" },
+  tosh:     { label: "Tosh",     color: "#f59e0b", icon: "🪨" },
+  boshqa:   { label: "Boshqa",  color: "#7c3aed", icon: "⚙️" },
 };
-const EXPENSE_TYPES = ["maosh", "xarajat", "soliq", "transport", "kommunal", "boshqa"];
 const TYPES = Object.entries(TYPE_META).map(([value, m]) => ({ value, label: m.label }));
 const TYPE_LABELS = Object.fromEntries(Object.entries(TYPE_META).map(([k, v]) => [k, v.label]));
 const TYPE_COLORS = Object.fromEntries(Object.entries(TYPE_META).map(([k, v]) => [k, v.color]));
@@ -144,14 +138,9 @@ function TypeBadge({ type }) {
 }
 
 const DETAIL_PLACEHOLDERS = {
-  material:  "Nomi...",
-  tosh:      "Turi...",
-  maosh:     "Kimga, sabab (masalan: Zohid akaga oylik)...",
-  xarajat:   "Xarajat nomi...",
-  soliq:     "Soliq turi, davri...",
-  transport: "Marshrut, tafsilot...",
-  kommunal:  "Elektr, suv, gaz...",
-  boshqa:    "Tafsilot...",
+  material: "Nomi...",
+  tosh:     "Turi...",
+  boshqa:   "Maosh, transport, soliq yoki boshqa...",
 };
 
 // Tafsilot maydoni (tur ga qarab)
@@ -370,8 +359,7 @@ export function PurchasesTable({ showNav = false }) {
   const handleTypeChange = (type) => {
     const detail = getDefaultDetail(type);
     const narxi = getDefaultPrice(type, detail);
-    const extra = EXPENSE_TYPES.includes(type) ? { soni: 1 } : {};
-    setEditForm(p => ({ ...p, type, detail, color: "", narxi: narxi || p.narxi, ...extra }));
+    setEditForm(p => ({ ...p, type, detail, color: "", narxi: narxi || p.narxi, ...(type === "boshqa" ? { soni: 1 } : {}) }));
   };
 
   const handleDetailChange = (detail) => {
@@ -380,8 +368,10 @@ export function PurchasesTable({ showNav = false }) {
   };
 
   const saveRow = async () => {
-    if (!editForm.date || !editForm.type || !editForm.soni || !editForm.narxi) {
-      showToast("Sana, tur, soni va narxni to'ldiring", "error"); return;
+    const isBoshqa = editForm.type === "boshqa";
+    const effectiveSoni = isBoshqa ? 1 : editForm.soni;
+    if (!editForm.date || !editForm.type || !effectiveSoni || !editForm.narxi) {
+      showToast("Sana, tur va narxni to'ldiring", "error"); return;
     }
     setSaving(true);
     try {
@@ -390,7 +380,7 @@ export function PurchasesTable({ showNav = false }) {
         type: editForm.type,
         detail: editForm.detail || null,
         color: (editForm.type === "material" || editForm.type === "tosh") ? (editForm.color || null) : null,
-        soni: parseInt(editForm.soni),
+        soni: isBoshqa ? 1 : parseInt(editForm.soni),
         narxi: parseFloat(editForm.narxi),
         notes: editForm.notes || null,
       };
@@ -488,10 +478,10 @@ export function PurchasesTable({ showNav = false }) {
           // Format: Sana | Tur | Tafsilot | Soni | Narxi | Izoh
           const [sana, tur, tafsilot, soni, narxi, izoh] = r;
           const typeMap = {
-            ip: "ip", skoch: "skoch", material: "material", tosh: "tosh",
-            maosh: "maosh", xarajat: "xarajat", soliq: "soliq", transport: "transport", kommunal: "kommunal", boshqa: "boshqa",
-            "Ip": "ip", "Skoch": "skoch", "Material": "material", "Tosh": "tosh",
-            "Maosh": "maosh", "Xarajat": "xarajat", "Soliq": "soliq", "Transport": "transport", "Kommunal": "kommunal", "Boshqa": "boshqa",
+            ip: "ip", skoch: "skoch", material: "material", tosh: "tosh", boshqa: "boshqa",
+            "Ip": "ip", "Skoch": "skoch", "Material": "material", "Tosh": "tosh", "Boshqa": "boshqa",
+            // eski turlar uchun fallback
+            maosh: "boshqa", xarajat: "boshqa", soliq: "boshqa", transport: "boshqa", kommunal: "boshqa",
           };
           const type = typeMap[String(tur).trim()] || "ip";
           const dateVal = typeof sana === "number"
@@ -587,13 +577,19 @@ export function PurchasesTable({ showNav = false }) {
                     )}
                   </td>
                   <td style={editCellStyle}>
-                    <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} placeholder="0" min="1" style={cellInp} />
+                    {editForm.type === "boshqa" ? (
+                      <span style={{ padding: "4px 8px", color: "#94a3b8", fontSize: "13px" }}>1 (auto)</span>
+                    ) : (
+                      <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))}
+                        placeholder={editForm.type === "material" ? "metr" : "0"} min="1" style={cellInp} />
+                    )}
                   </td>
                   <td style={editCellStyle}>
-                    <input type="number" value={editForm.narxi} onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))} placeholder="0" min="0" style={cellInp} />
+                    <input type="number" value={editForm.narxi} onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))}
+                      placeholder={editForm.type === "material" ? "narxi/metr" : "0"} min="0" style={cellInp} />
                   </td>
                   <td style={{ ...editCellStyle, color: "#2d6a4f", fontWeight: 700 }}>
-                    {editForm.soni && editForm.narxi ? fmt(editForm.soni * editForm.narxi) : "—"}
+                    {editForm.narxi ? fmt((editForm.type === "boshqa" ? 1 : (editForm.soni || 0)) * editForm.narxi) : "—"}
                   </td>
                   <td style={editCellStyle}>
                     <input type="text" value={editForm.notes} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder="Izoh..." style={cellInp} />
@@ -642,13 +638,19 @@ export function PurchasesTable({ showNav = false }) {
                           )}
                         </td>
                         <td style={editCellStyle}>
-                          <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))} min="1" style={cellInp} />
+                          {editForm.type === "boshqa" ? (
+                            <span style={{ padding: "4px 8px", color: "#94a3b8", fontSize: "13px" }}>1 (auto)</span>
+                          ) : (
+                            <input type="number" value={editForm.soni} onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))}
+                              placeholder={editForm.type === "material" ? "metr" : "0"} min="1" style={cellInp} />
+                          )}
                         </td>
                         <td style={editCellStyle}>
-                          <input type="number" value={editForm.narxi} onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))} min="0" style={cellInp} />
+                          <input type="number" value={editForm.narxi} onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))}
+                            placeholder={editForm.type === "material" ? "narxi/metr" : "0"} min="0" style={cellInp} />
                         </td>
                         <td style={{ ...editCellStyle, color: "#2d6a4f", fontWeight: 700 }}>
-                          {editForm.soni && editForm.narxi ? fmt(editForm.soni * editForm.narxi) : "—"}
+                          {editForm.narxi ? fmt((editForm.type === "boshqa" ? 1 : (editForm.soni || 0)) * editForm.narxi) : "—"}
                         </td>
                         <td style={editCellStyle}>
                           <input type="text" value={editForm.notes} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder="Izoh..." style={cellInp} />
@@ -758,24 +760,28 @@ export function PurchasesTable({ showNav = false }) {
               <ColorSelect value={editForm.color} onChange={v => setEditForm(p => ({ ...p, color: v }))} style={mInp} />
             </MField>
           )}
-          {/* Soni */}
-          <MField label="Soni *">
-            <input type="number" value={editForm.soni} min="1" placeholder="0"
-              onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))}
-              style={mInp} />
-          </MField>
+          {/* Soni — boshqa uchun yashirin (avtomatik 1) */}
+          {editForm.type !== "boshqa" && (
+            <MField label={editForm.type === "material" ? "Metr *" : "Soni *"}>
+              <input type="number" value={editForm.soni} min="1"
+                placeholder={editForm.type === "material" ? "metr miqdori" : "0"}
+                onChange={e => setEditForm(p => ({ ...p, soni: e.target.value }))}
+                style={mInp} />
+            </MField>
+          )}
           {/* Narxi */}
-          <MField label="Narxi (so'm) *">
-            <input type="number" value={editForm.narxi} min="0" placeholder="0"
+          <MField label={editForm.type === "material" ? "Narxi (metr) *" : "Narxi (so'm) *"}>
+            <input type="number" value={editForm.narxi} min="0"
+              placeholder={editForm.type === "material" ? "1 metr narxi" : "0"}
               onChange={e => setEditForm(p => ({ ...p, narxi: e.target.value }))}
               style={mInp} />
           </MField>
           {/* Jami preview */}
-          {editForm.soni && editForm.narxi && (
+          {editForm.narxi && (
             <div style={{ padding: "12px 14px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0", marginBottom: "14px" }}>
               <span style={{ fontWeight: 600, color: "#374151" }}>Jami: </span>
               <span style={{ fontWeight: 800, color: "#2d6a4f", fontSize: "20px" }}>
-                {fmt(Number(editForm.soni) * Number(editForm.narxi))} so'm
+                {fmt((editForm.type === "boshqa" ? 1 : Number(editForm.soni || 0)) * Number(editForm.narxi))} so'm
               </span>
             </div>
           )}
@@ -787,10 +793,17 @@ export function PurchasesTable({ showNav = false }) {
           </MField>
           {/* Tugmalar */}
           <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
-            <button onClick={cancelEdit} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", background: "#f1f5f9", color: "#475569", fontSize: "15px", fontWeight: 600, minHeight: "52px", cursor: "pointer" }}>
+            <button
+              onClick={cancelEdit}
+              onTouchEnd={e => { e.preventDefault(); cancelEdit(); }}
+              style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", background: "#f1f5f9", color: "#475569", fontSize: "15px", fontWeight: 600, minHeight: "52px", cursor: "pointer" }}>
               Bekor
             </button>
-            <button onClick={saveRow} disabled={saving} style={{ flex: 2, padding: "14px", borderRadius: "10px", border: "none", background: saving ? "#6ee7b7" : "#2d6a4f", color: "#fff", fontSize: "15px", fontWeight: 700, minHeight: "52px", cursor: saving ? "not-allowed" : "pointer" }}>
+            <button
+              onClick={saving ? undefined : saveRow}
+              onTouchEnd={e => { e.preventDefault(); if (!saving) saveRow(); }}
+              disabled={saving}
+              style={{ flex: 2, padding: "14px", borderRadius: "10px", border: "none", background: saving ? "#6ee7b7" : "#2d6a4f", color: "#fff", fontSize: "15px", fontWeight: 700, minHeight: "52px", cursor: saving ? "not-allowed" : "pointer" }}>
               {saving ? "Saqlanmoqda..." : "✅ Saqlash"}
             </button>
           </div>
